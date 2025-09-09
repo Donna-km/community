@@ -1,0 +1,2929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Cal - Gamified Nutrition & Fitness</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- LINE LIFF SDK -->
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        .custom-red { background-color: #cc1e0f; }
+        .custom-red-hover:hover { background-color: #b01a0d; }
+        .progress-bar {
+            background: linear-gradient(90deg, #cc1e0f 0%, #ff4444 100%);
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            z-index: 50;
+        }
+        .nav-item.active {
+            color: #cc1e0f;
+        }
+        .streak-fire {
+            animation: flicker 1s ease-in-out infinite alternate;
+        }
+        @keyframes flicker {
+            0% { transform: scale(1) rotate(-1deg); }
+            100% { transform: scale(1.1) rotate(1deg); }
+        }
+        .admin-badge {
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            color: #b45309;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 pb-20">
+    <!-- Header -->
+    <header class="custom-red text-white p-4 shadow-lg">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="text-2xl">🔥</div>
+                <h1 class="text-xl font-bold">E-Cal</h1>
+                <div id="connectionStatus" class="text-xs bg-white bg-opacity-20 px-2 py-1 rounded">
+                    Demo Mode
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <div class="text-sm">Points: <span id="userPoints" class="font-bold">125</span></div>
+                <div class="flex flex-col items-center">
+                    <div class="w-8 h-8 bg-white rounded-full flex items-center justify-center text-red-600 font-bold" id="userAvatar">U</div>
+                    <div id="adminBadge" class="admin-badge mt-1 hidden">Admin</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="p-4 space-y-6">
+        <!-- Challenge Board Section -->
+        <section id="challengeBoard" class="space-y-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-xl font-bold text-gray-800">🏆 Challenge Board</h2>
+                <button id="addChallengeBtn" onclick="showAdminPanel('challenge')" class="custom-red text-white px-3 py-1 rounded-lg text-sm font-medium hidden">+ Add Challenge</button>
+            </div>
+            <div id="challengeGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Challenge cards will be populated here -->
+            </div>
+        </section>
+
+        <!-- My Challenges Section -->
+        <section id="myChallenges" class="space-y-4 hidden">
+            <h2 class="text-xl font-bold text-gray-800">💪 My Challenges</h2>
+            <div id="myChallengeGrid" class="space-y-4">
+                <!-- My challenge cards will be populated here -->
+            </div>
+            
+            <h2 class="text-xl font-bold text-gray-800 mt-8">🎉 My Events</h2>
+            <div id="myEventGrid" class="space-y-4">
+                <!-- My event cards will be populated here -->
+            </div>
+        </section>
+
+        <!-- Events Section -->
+        <section id="events" class="space-y-4 hidden">
+            <div class="flex items-center justify-between">
+                <h2 class="text-xl font-bold text-gray-800">🎉 Events</h2>
+                <button id="addEventBtn" onclick="showAdminPanel('event')" class="custom-red text-white px-3 py-1 rounded-lg text-sm font-medium hidden">+ Add Event</button>
+            </div>
+            <div id="eventGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Event cards will be populated here -->
+            </div>
+        </section>
+
+        <!-- Leaderboard Section -->
+        <section id="leaderboard" class="space-y-4 hidden">
+            <h2 class="text-xl font-bold text-gray-800">🏆 Monthly Leaderboard</h2>
+            
+            <!-- User Current Rank Card -->
+            <div class="bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl shadow-md p-4">
+                <div class="text-center space-y-2">
+                    <h3 class="text-lg font-bold">Your Current Rank</h3>
+                    <div class="text-3xl font-bold" id="userCurrentRank">#4</div>
+                    <div class="text-sm opacity-90">Position</div>
+                    <div class="flex justify-center space-x-6 mt-4">
+                        <div class="text-center">
+                            <div class="text-xl font-bold" id="userCurrentPoints">1,250</div>
+                            <div class="text-xs opacity-80">Points</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-xl font-bold text-green-300">+85</div>
+                            <div class="text-xs opacity-80">This Week</div>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-sm bg-white bg-opacity-20 rounded-lg p-2">
+                        <span id="rankMessage">🎯 You need 930 more points to reach #3!</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-md p-4">
+                <div id="leaderboardList" class="space-y-3">
+                    <!-- Leaderboard items will be populated here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Gallery Section -->
+        <section id="gallery" class="space-y-4 hidden">
+            <div class="flex items-center justify-between">
+                <h2 class="text-xl font-bold text-gray-800">📸 Community Gallery</h2>
+                <div class="text-sm text-gray-600">
+                    <span id="galleryCount">0</span> photos shared
+                </div>
+            </div>
+            
+            <!-- Gallery Grid -->
+            <div id="galleryGrid" class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <!-- Gallery photos will be populated here -->
+            </div>
+            
+            <!-- Empty State -->
+            <div id="galleryEmpty" class="text-center py-12 hidden">
+                <div class="text-6xl mb-4">📸</div>
+                <h3 class="text-lg font-bold text-gray-800 mb-2">No photos yet!</h3>
+                <p class="text-gray-600 mb-4">Be the first to share your progress photos with the community.</p>
+                <button onclick="showSection('myChallenges')" class="custom-red text-white px-6 py-3 rounded-lg font-medium">
+                    Complete a Challenge
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <div class="flex justify-around py-2">
+            <button class="nav-item active flex flex-col items-center p-2" onclick="showSection('challengeBoard')">
+                <span class="text-xl">🏠</span>
+                <span class="text-xs mt-1">Home</span>
+            </button>
+            <button class="nav-item flex flex-col items-center p-2" onclick="showSection('myChallenges')">
+                <span class="text-xl">💪</span>
+                <span class="text-xs mt-1">My Challenges</span>
+            </button>
+            <button class="nav-item flex flex-col items-center p-2" onclick="showSection('leaderboard')">
+                <span class="text-xl">🏆</span>
+                <span class="text-xs mt-1">Leaderboard</span>
+            </button>
+            <button class="nav-item flex flex-col items-center p-2" onclick="showSection('events')">
+                <span class="text-xl">🎉</span>
+                <span class="text-xs mt-1">Events</span>
+            </button>
+            <button class="nav-item flex flex-col items-center p-2" onclick="showSection('gallery')">
+                <span class="text-xl">📸</span>
+                <span class="text-xs mt-1">Gallery</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Challenge Complete Popup -->
+    <div id="completePopup" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl p-6 m-4 max-w-sm w-full text-center">
+            <div class="text-6xl mb-4">🎉</div>
+            <div class="text-2xl font-bold mb-2">Challenge Complete!</div>
+            <div class="text-4xl mb-4" id="badgeIcon">🥉</div>
+            <div class="text-lg font-medium mb-4" id="roastMessage">เฮ้ย โกงป่ะวะ?! 😂</div>
+            <div class="space-y-3">
+                <button class="w-full custom-red text-white py-3 rounded-lg font-medium">Share 📱</button>
+                <button class="w-full bg-gray-200 text-gray-800 py-3 rounded-lg font-medium">Next Challenge 🔓</button>
+                <button class="w-full bg-yellow-400 text-yellow-900 py-3 rounded-lg font-medium">Reward 🎁</button>
+            </div>
+            <button onclick="closeCompletePopup()" class="mt-4 text-gray-500 text-sm">Close</button>
+        </div>
+    </div>
+
+    <!-- Photo Upload Modal -->
+    <div id="photoModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl p-6 m-4 max-w-md w-full">
+            <h3 class="text-lg font-bold mb-4">Upload Today's Progress</h3>
+            <div class="space-y-4">
+                <!-- Photo Upload Area -->
+                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center" id="photoUploadArea">
+                    <div class="text-4xl mb-2">📸</div>
+                    <p class="text-gray-600 mb-3">Take a photo or upload image (optional)</p>
+                    <input type="file" accept="image/*" class="hidden" id="photoInput">
+                    <button type="button" onclick="document.getElementById('photoInput').click()" class="custom-red text-white px-4 py-2 rounded-lg text-sm">
+                        Choose Photo
+                    </button>
+                </div>
+                
+                <!-- Photo Preview -->
+                <div id="photoPreview" class="hidden">
+                    <div class="relative">
+                        <img id="previewImage" src="" alt="Preview" class="w-full h-48 object-cover rounded-lg">
+                        <button type="button" onclick="removePhoto()" class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm">
+                            ×
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Share to Gallery Option -->
+                <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <input type="checkbox" id="shareToGallery" class="w-4 h-4 text-red-600 rounded">
+                    <label for="shareToGallery" class="text-sm text-gray-700 flex items-center space-x-2">
+                        <span>✅ Share this photo to Gallery</span>
+                    </label>
+                </div>
+                
+                <!-- Points Info -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <div class="text-sm text-blue-800">
+                        <div class="font-medium mb-1">🎁 Reward Points:</div>
+                        <div>• Without photo: +2 points</div>
+                        <div>• With photo: +5 points</div>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex space-x-3 pt-2">
+                    <button type="button" onclick="closePhotoModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 rounded-lg font-medium transition-colors">
+                        Cancel
+                    </button>
+                    <button type="button" onclick="handleSubmitProgress()" class="flex-1 custom-red custom-red-hover text-white py-3 rounded-lg font-medium transition-colors">
+                        Submit
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Event Detail Modal -->
+    <div id="eventDetailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl m-4 max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div id="eventDetailContent">
+                <!-- Event detail content will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Gallery Photo Detail Modal -->
+    <div id="galleryPhotoModal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-60 hidden">
+        <div class="relative max-w-4xl max-h-[90vh] m-4">
+            <div class="bg-white rounded-2xl overflow-hidden">
+                <div class="relative">
+                    <img id="galleryModalImage" src="" alt="Gallery photo" class="w-full h-96 object-cover">
+                    <button onclick="closeGalleryPhotoModal()" class="absolute top-4 right-4 bg-black bg-opacity-50 text-white rounded-full w-10 h-10 flex items-center justify-center text-xl">
+                        &times;
+                    </button>
+                </div>
+                <div class="p-6">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                            <span class="text-lg font-bold text-red-600" id="galleryModalUserAvatar">U</span>
+                        </div>
+                        <div>
+                            <div class="font-bold text-gray-800" id="galleryModalUserName">User123</div>
+                            <div class="text-sm text-gray-600" id="galleryModalDate">Today</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2 mb-3">
+                        <span class="text-xl" id="galleryModalEmoji">💪</span>
+                        <span class="font-medium text-gray-800" id="galleryModalChallenge">Challenge Name</span>
+                    </div>
+                    <div class="text-sm text-gray-600" id="galleryModalPoints">+5 points earned</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Panel Modal -->
+    <div id="adminModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl p-6 m-4 max-w-md w-full">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold" id="adminModalTitle">Add New Challenge</h3>
+                <button onclick="closeAdminModal()" class="text-gray-500 text-xl">&times;</button>
+            </div>
+            <form id="adminForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <input type="text" id="adminName" class="w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="Enter name..." required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Emoji</label>
+                    <input type="text" id="adminEmoji" class="w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="🏃‍♂️" value="🏃‍♂️">
+                </div>
+                <div id="challengeFields">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Duration (days)</label>
+                        <input type="number" id="adminDuration" class="w-full border border-gray-300 rounded-lg px-3 py-2" min="1" value="7">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <textarea id="adminChallengeDescription" class="w-full border border-gray-300 rounded-lg px-3 py-2 h-20" placeholder="Describe the challenge..."></textarea>
+                    </div>
+                </div>
+                <div id="eventFields" class="hidden space-y-4">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                            <input type="date" id="adminStartDate" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                            <input type="time" id="adminStartTime" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                            <input type="date" id="adminEndDate" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                            <input type="time" id="adminEndTime" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                        <input type="text" id="adminEventLocation" class="w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="Bangkok, Thailand" value="Bangkok, Thailand">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Event Details</label>
+                        <textarea id="adminEventDetails" class="w-full border border-gray-300 rounded-lg px-3 py-2 h-20" placeholder="Describe your event..."></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Completion Points</label>
+                        <input type="number" id="adminEventPoints" class="w-full border border-gray-300 rounded-lg px-3 py-2" min="1" placeholder="50" value="50">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Event Images (Max 5)</label>
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-4">
+                            <input type="file" id="adminEventImages" multiple accept="image/*" class="hidden">
+                            <div class="text-center">
+                                <div class="text-2xl mb-2">📸</div>
+                                <button type="button" onclick="document.getElementById('adminEventImages').click()" class="custom-red text-white px-4 py-2 rounded-lg text-sm">
+                                    Choose Images
+                                </button>
+                                <p class="text-xs text-gray-500 mt-1">Up to 5 images</p>
+                            </div>
+                            <div id="imagePreview" class="mt-3 grid grid-cols-3 gap-2 hidden"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex space-x-3 pt-4">
+                    <button type="button" onclick="closeAdminModal()" class="flex-1 bg-gray-200 text-gray-800 py-3 rounded-lg">Cancel</button>
+                    <button type="submit" class="flex-1 custom-red text-white py-3 rounded-lg">Create</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Configuration - Set your Supabase and LIFF credentials here
+        const SUPABASE_CONFIG = {
+            url: 'https://fmsikqggaxxbytrndvbv.supabase.co', // Replace with your actual Supabase URL (e.g., 'https://your-project.supabase.co')
+            key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2dGRxZWVyenhwem5uYXljY21iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0MTAxMjksImV4cCI6MjA2ODk4NjEyOX0.Uai-3_YSJpsYmSSTbHtrSNBoCG5f8WxoUcqyvcV3yUM', // Replace with your actual Supabase anon key
+            enabled: true // ⚠️ IMPORTANT: Replace the placeholder values above with your real credentials!
+        };
+
+        const LIFF_CONFIG = {
+            liffId: '2007859046-ZlYy9oYr', // Replace with your actual LIFF ID (e.g., '1234567890-abcdefgh')
+            enabled: true // Set to true when you have LIFF configured
+        };
+
+        // Debug function to check configuration
+        function checkConfiguration() {
+            console.log('🔧 Configuration Check:');
+            console.log('📊 Supabase URL:', SUPABASE_CONFIG.url);
+            console.log('🔑 Supabase Key:', SUPABASE_CONFIG.key ? 'SET ✅' : 'NOT SET ❌');
+            console.log('📱 LIFF ID:', LIFF_CONFIG.liffId);
+            console.log('🔧 Supabase Enabled:', SUPABASE_CONFIG.enabled);
+            console.log('📱 LIFF Enabled:', LIFF_CONFIG.enabled);
+            
+            // Check if values are still placeholders
+            if (SUPABASE_CONFIG.url === 'YOUR_SUPABASE_URL_HERE' || SUPABASE_CONFIG.url === '') {
+                console.error('❌ SUPABASE URL IS STILL PLACEHOLDER! Please replace with your actual URL');
+                return false;
+            }
+            if (SUPABASE_CONFIG.key === 'YOUR_SUPABASE_ANON_KEY_HERE' || SUPABASE_CONFIG.key === '') {
+                console.error('❌ SUPABASE KEY IS STILL PLACEHOLDER! Please replace with your actual key');
+                return false;
+            }
+            if (LIFF_CONFIG.liffId === 'YOUR_LIFF_ID_HERE' || LIFF_CONFIG.liffId === '') {
+                console.warn('⚠️ LIFF ID IS STILL PLACEHOLDER! Replace with your actual LIFF ID if you want LINE integration');
+            }
+            
+            return true;
+        }
+
+        // Global variables
+        let supabase = null;
+        let currentUser = null;
+        let liffUser = null;
+        let isAdmin = false;
+        let useSupabase = false;
+        let useLiff = false;
+
+        // Demo Data (fallback when Supabase is not configured)
+        const demoData = {
+            challenges: [
+                { id: 1, name: "30-Day Water Challenge", emoji: "💧", duration: 30, participants: 1247, joined: false, description: "Drink 8 glasses of water daily for 30 days" },
+                { id: 2, name: "Morning Workout", emoji: "🏃‍♂️", duration: 21, participants: 892, joined: false, description: "Complete a 30-minute morning workout every day" },
+                { id: 3, name: "Healthy Meal Prep", emoji: "🥗", duration: 14, participants: 634, joined: false, description: "Prepare healthy meals for the week ahead" },
+                { id: 4, name: "10K Steps Daily", emoji: "👟", duration: 30, participants: 1156, joined: false, description: "Walk at least 10,000 steps every single day" },
+                { id: 5, name: "No Sugar Challenge", emoji: "🚫🍭", duration: 7, participants: 423, joined: false, description: "Avoid added sugars for one full week" },
+                { id: 6, name: "Meditation Minutes", emoji: "🧘‍♀️", duration: 21, participants: 567, joined: false, description: "Practice mindfulness meditation for 10 minutes daily" }
+            ],
+            proofs: [
+                {
+                    id: 1,
+                    user_name: "FitnessPro",
+                    challenge_name: "Morning Workout",
+                    challenge_emoji: "🏃‍♂️",
+                    photo_url: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&h=300&fit=crop",
+                    shared_to_gallery: true,
+                    points_earned: 5,
+                    created_at: "2024-01-15T08:30:00Z"
+                },
+                {
+                    id: 2,
+                    user_name: "HealthyEater",
+                    challenge_name: "Healthy Meal Prep",
+                    challenge_emoji: "🥗",
+                    photo_url: "https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=300&h=300&fit=crop",
+                    shared_to_gallery: true,
+                    points_earned: 5,
+                    created_at: "2024-01-14T12:15:00Z"
+                },
+                {
+                    id: 3,
+                    user_name: "WaterChamp",
+                    challenge_name: "30-Day Water Challenge",
+                    challenge_emoji: "💧",
+                    photo_url: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=300&h=300&fit=crop",
+                    shared_to_gallery: true,
+                    points_earned: 5,
+                    created_at: "2024-01-14T09:45:00Z"
+                },
+                {
+                    id: 4,
+                    user_name: "YogaMaster",
+                    challenge_name: "Meditation Minutes",
+                    challenge_emoji: "🧘‍♀️",
+                    photo_url: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=300&fit=crop",
+                    shared_to_gallery: true,
+                    points_earned: 5,
+                    created_at: "2024-01-13T18:20:00Z"
+                },
+                {
+                    id: 5,
+                    user_name: "StepCounter",
+                    challenge_name: "10K Steps Daily",
+                    challenge_emoji: "👟",
+                    photo_url: "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=300&h=300&fit=crop",
+                    shared_to_gallery: true,
+                    points_earned: 5,
+                    created_at: "2024-01-13T16:10:00Z"
+                },
+                {
+                    id: 6,
+                    user_name: "MorningWarrior",
+                    challenge_name: "Morning Workout",
+                    challenge_emoji: "🏃‍♂️",
+                    photo_url: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=300&h=300&fit=crop",
+                    shared_to_gallery: true,
+                    points_earned: 5,
+                    created_at: "2024-01-12T07:30:00Z"
+                }
+            ],
+            myChallenges: [
+                // Empty - so you can test joining challenges from the main board
+            ],
+            events: [
+                { 
+                    id: 1, 
+                    name: "Bangkok Marathon 2026", 
+                    emoji: "🏃‍♂️", 
+                    startDate: "2026-01-25", 
+                    startTime: "06:00",
+                    endDate: "2026-01-25",
+                    endTime: "12:00",
+                    participants: 2500, 
+                    images: ["https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=200&fit=crop"],
+                    description: "Join thousands of runners in Bangkok's biggest marathon event! 42km of scenic routes through the city.",
+                    location: "Bangkok, Thailand",
+                    points: 100,
+                    joined: false
+                },
+                { 
+                    id: 2, 
+                    name: "Healthy Cooking Workshop", 
+                    emoji: "👨‍🍳", 
+                    startDate: "2025-09-15", 
+                    startTime: "14:00",
+                    endDate: "2025-09-15",
+                    endTime: "17:00",
+                    participants: 150, 
+                    images: ["https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=200&fit=crop"],
+                    description: "Learn to prepare nutritious and delicious meals with our expert chefs. All ingredients provided!",
+                    location: "Central World, Bangkok",
+                    points: 50,
+                    joined: false
+                },
+                { 
+                    id: 3, 
+                    name: "Yoga in the Park", 
+                    emoji: "🧘‍♀️", 
+                    startDate: "2025-09-12", 
+                    startTime: "07:00",
+                    endDate: "2025-09-12",
+                    endTime: "08:30",
+                    participants: 80, 
+                    images: ["https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&h=200&fit=crop"],
+                    description: "Start your morning with peaceful yoga session in beautiful Lumpini Park. All levels welcome!",
+                    location: "Lumpini Park, Bangkok",
+                    points: 30,
+                    joined: false
+                },
+                { 
+                    id: 4, 
+                    name: "October Fitness Challenge", 
+                    emoji: "🎃", 
+                    startDate: "2025-10-01", 
+                    startTime: "09:00",
+                    endDate: "2025-10-01",
+                    endTime: "17:00",
+                    participants: 300, 
+                    images: ["https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=400&h=200&fit=crop"],
+                    description: "Kick off October with our spooky fitness challenge! Multiple activities throughout the day with Halloween theme.",
+                    location: "Siam Paragon, Bangkok",
+                    points: 75,
+                    joined: false
+                }
+            ],
+            myEvents: [],
+            leaderboard: [
+                { rank: 1, name: "AdminUser", points: 5000, avatar: "👑", role: "admin" },
+                { rank: 2, name: "FitnessPro", points: 2450, avatar: "🏆", role: "user" },
+                { rank: 3, name: "HealthyEater", points: 2280, avatar: "🥈", role: "user" },
+                { rank: 4, name: "RunnerGirl", points: 2150, avatar: "🥉", role: "user" },
+                { rank: 5, name: "YogaMaster", points: 1980, avatar: "🧘", role: "user" },
+                { rank: 6, name: "WaterChamp", points: 1850, avatar: "💧", role: "user" },
+                { rank: 7, name: "StepCounter", points: 1720, avatar: "👟", role: "user" },
+                { rank: 8, name: "MealPrepper", points: 1650, avatar: "🥗", role: "user" },
+                { rank: 9, name: "MorningWarrior", points: 1580, avatar: "🌅", role: "user" },
+                { rank: 10, name: "StreakKeeper", points: 1420, avatar: "🔥", role: "user" },
+                { rank: 11, name: "User123", points: 125, avatar: "👤", role: "user" }
+            ]
+        };
+
+        const roastMessages = [
+            "เฮ้ย โกงป่ะวะ?! 😂",
+            "Finally! I was getting worried! 🤣",
+            "Look who decided to show up! 💪",
+            "เก่งจัง! Keep it up! 🔥",
+            "That's what I'm talking about! 🎉",
+            "You're on fire today! 🚀",
+            "ไม่เชื่อว่าทำได้จริง! 😱",
+            "Show off! But I like it! 💯"
+        ];
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Check configuration first
+            const configValid = checkConfiguration();
+            if (!configValid) {
+                console.error('❌ CONFIGURATION ERROR: Please check your Supabase credentials!');
+                updateConnectionStatus('❌ Config Error - Check Console');
+            }
+            await initializeApp();
+        });
+
+        async function initializeApp() {
+            // Initialize LIFF first if configured
+            if (LIFF_CONFIG.liffId && LIFF_CONFIG.enabled) {
+                try {
+                    console.log('🔄 Initializing LIFF with ID:', LIFF_CONFIG.liffId);
+                    await liff.init({ liffId: LIFF_CONFIG.liffId });
+                    useLiff = true;
+                    console.log('✅ LIFF initialized successfully');
+                    
+                    if (liff.isLoggedIn()) {
+                        console.log('✅ User is already logged in to LINE');
+                        liffUser = await liff.getProfile();
+                        currentUser = {
+                            id: liffUser.userId,
+                            email: liffUser.email || `${liffUser.userId}@line.me`,
+                            name: liffUser.displayName,
+                            avatar: liffUser.pictureUrl
+                        };
+                        console.log('✅ LIFF user authenticated:', liffUser.displayName);
+                        updateConnectionStatus('Connected via LINE');
+                    } else {
+                        console.log('❌ User not logged in, redirecting to LINE login...');
+                        updateConnectionStatus('Redirecting to LINE Login...');
+                        // Show loading message before redirect
+                        document.body.innerHTML = `
+                            <div class="min-h-screen bg-red-600 flex items-center justify-center">
+                                <div class="text-center text-white">
+                                    <div class="text-6xl mb-4">🔥</div>
+                                    <h1 class="text-2xl font-bold mb-4">E-Cal</h1>
+                                    <p class="mb-4">Redirecting to LINE login...</p>
+                                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto"></div>
+                                </div>
+                            </div>
+                        `;
+                        // Redirect to LINE login
+                        setTimeout(() => {
+                            liff.login();
+                        }, 1000);
+                        return;
+                    }
+                } catch (error) {
+                    console.error('❌ LIFF initialization failed:', error);
+                    updateConnectionStatus('LIFF Error - Using Demo Mode');
+                    useLiff = false;
+                }
+            }
+
+            // Check if Supabase is configured with real values
+            const hasValidSupabaseConfig = SUPABASE_CONFIG.url && 
+                                         SUPABASE_CONFIG.key && 
+                                         SUPABASE_CONFIG.enabled &&
+                                         SUPABASE_CONFIG.url !== 'YOUR_SUPABASE_URL_HERE' &&
+                                         SUPABASE_CONFIG.key !== 'YOUR_SUPABASE_ANON_KEY_HERE' &&
+                                         SUPABASE_CONFIG.url !== '' &&
+                                         SUPABASE_CONFIG.key !== '';
+
+            if (hasValidSupabaseConfig) {
+                try {
+                    console.log('🔄 Attempting to connect to Supabase...');
+                    console.log('📊 URL:', SUPABASE_CONFIG.url);
+                    console.log('🔑 Key length:', SUPABASE_CONFIG.key.length);
+                    
+                    supabase = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.key);
+                    
+                    // Test the connection by trying to fetch from a table
+                    console.log('🧪 Testing Supabase connection...');
+                    const { data: testData, error: testError } = await supabase
+                        .from('challenges')
+                        .select('count')
+                        .limit(1);
+                    
+                    if (testError) {
+                        console.error('❌ Supabase connection test failed:', testError);
+                        throw testError;
+                    }
+                    
+                    console.log('✅ Supabase connection test successful!');
+                    useSupabase = true;
+                    
+                    if (useLiff && currentUser) {
+                        // Use LIFF user data with Supabase
+                        await loadOrCreateUserProfile();
+                        updateConnectionStatus('✅ LINE + Supabase Connected');
+                    } else {
+                        // Try to get current session from Supabase
+                        const { data: { session } } = await supabase.auth.getSession();
+                        if (session) {
+                            currentUser = session.user;
+                            await loadUserProfile();
+                        } else {
+                            // For demo purposes, simulate admin login
+                            await simulateAdminLogin();
+                        }
+                        updateConnectionStatus('✅ Supabase Connected');
+                    }
+                    
+                    console.log('✅ Supabase connected and working successfully');
+                } catch (error) {
+                    console.error('❌ Supabase connection failed:', error);
+                    console.error('❌ Error details:', error.message);
+                    console.error('❌ Please check:');
+                    console.error('   1. Your Supabase URL is correct');
+                    console.error('   2. Your Supabase anon key is correct');
+                    console.error('   3. Your database tables exist (challenges, events, users, etc.)');
+                    console.error('   4. Row Level Security (RLS) policies allow access');
+                    
+                    useSupabase = false;
+                    if (useLiff) {
+                        updateConnectionStatus('❌ Supabase Failed - LINE Only');
+                    } else {
+                        simulateDemoUser();
+                        updateConnectionStatus('❌ Supabase Connection Failed');
+                    }
+                }
+            } else {
+                console.log('📝 Using demo mode - Supabase not properly configured');
+                console.log('❌ Configuration issues found:');
+                if (!SUPABASE_CONFIG.url || SUPABASE_CONFIG.url === 'YOUR_SUPABASE_URL_HERE') {
+                    console.log('   - Supabase URL is missing or still placeholder');
+                }
+                if (!SUPABASE_CONFIG.key || SUPABASE_CONFIG.key === 'YOUR_SUPABASE_ANON_KEY_HERE') {
+                    console.log('   - Supabase anon key is missing or still placeholder');
+                }
+                if (!SUPABASE_CONFIG.enabled) {
+                    console.log('   - Supabase is disabled in config');
+                }
+                console.log('⚠️ To enable database features:');
+                console.log('1. Replace YOUR_SUPABASE_URL_HERE with your actual Supabase URL');
+                console.log('2. Replace YOUR_SUPABASE_ANON_KEY_HERE with your actual Supabase anon key');
+                console.log('3. Make sure enabled is set to true');
+                
+                useSupabase = false;
+                if (useLiff) {
+                    updateConnectionStatus('⚠️ LINE Only - Fix Supabase Config');
+                } else {
+                    simulateDemoUser();
+                    updateConnectionStatus('⚠️ Demo Mode - Fix Supabase Config');
+                }
+            }
+
+            // Update UI with user data
+            updateUserInterface();
+
+            // Load initial data
+            await loadAllData();
+        }
+
+        async function simulateAdminLogin() {
+            // For demo purposes, simulate admin user
+            currentUser = {
+                id: 'demo-admin-id',
+                email: 'admin@ecal.com'
+            };
+            isAdmin = true;
+            updateUserInterface();
+        }
+
+        function simulateDemoUser() {
+            // Simulate regular user for demo
+            currentUser = {
+                id: 'demo-user-id',
+                email: 'user123@example.com'
+            };
+            isAdmin = false; // Change to true to test admin features in demo mode
+            updateUserInterface();
+        }
+
+        async function loadOrCreateUserProfile() {
+            if (!useSupabase || !currentUser) return;
+
+            try {
+                // Use LINE User ID as the primary key
+                const lineUserId = liffUser ? liffUser.userId : currentUser.id;
+                
+                console.log('🔍 Looking for user with LINE ID:', lineUserId);
+                console.log('🔍 LIFF User data:', liffUser);
+                console.log('🔍 Current User data:', currentUser);
+                
+                // Try to find existing user using LINE ID
+                const { data: profile, error } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('id', lineUserId)
+                    .single();
+
+                if (error && error.code === 'PGRST116') {
+                    // User doesn't exist, create new profile using LINE ID
+                    console.log('👤 Creating new user with LINE ID:', lineUserId);
+                    console.log('👤 User name from LIFF:', liffUser?.displayName);
+                    console.log('👤 User email from LIFF:', liffUser?.email);
+                    
+                    const userData = {
+                        id: lineUserId,  // Use LINE User ID as primary key
+                        username: liffUser?.displayName || currentUser.name || 'LINE User',
+                        email: liffUser?.email || currentUser.email || `${lineUserId}@line.me`,
+                        avatar_emoji: '👤',
+                        total_points: 125,
+                        current_streak: 0,
+                        is_admin: true  // Setting you as admin for testing
+                    };
+                    
+                    console.log('👤 Creating user with data:', userData);
+                    
+                    const { data: newProfile, error: createError } = await supabase
+                        .from('users')
+                        .insert([userData])
+                        .select()
+                        .single();
+
+                    if (createError) {
+                        console.error('❌ Error creating user:', createError);
+                        console.error('❌ Error details:', createError.message);
+                        console.error('❌ Error hint:', createError.hint);
+                        throw createError;
+                    }
+                    
+                    console.log('✅ New admin user profile created:', newProfile);
+                    isAdmin = true;  // You are now admin
+                    document.getElementById('userPoints').textContent = '125';
+                    document.getElementById('userAvatar').textContent = '👤';
+                } else if (error) {
+                    console.error('❌ Error finding user:', error);
+                    throw error;
+                } else {
+                    // User exists, load profile
+                    console.log('✅ Found existing user with LINE ID:', profile.id);
+                    console.log('✅ User profile data:', profile);
+                    isAdmin = profile.is_admin === true;
+                    document.getElementById('userPoints').textContent = profile.total_points || 125;
+                    document.getElementById('userAvatar').textContent = profile.avatar_emoji || '👤';
+                    console.log('✅ User profile loaded:', profile.username, 'Admin:', profile.is_admin);
+                }
+                
+                // Update currentUser.id to use LINE ID for consistency
+                currentUser.id = lineUserId;
+                
+                updateUserInterface();
+            } catch (error) {
+                console.error('❌ Error loading/creating user profile:', error);
+                console.error('❌ Full error object:', error);
+                // Fallback to demo mode for this user - set as admin for testing
+                isAdmin = true;
+                document.getElementById('userPoints').textContent = '125';
+                document.getElementById('userAvatar').textContent = currentUser.name ? currentUser.name.charAt(0) : '👤';
+                updateUserInterface();
+            }
+        }
+
+        async function loadUserProfile() {
+            if (!useSupabase || !currentUser) return;
+
+            try {
+                // Use LINE User ID if available
+                const userId = liffUser ? liffUser.userId : currentUser.id;
+                
+                const { data: profile, error } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('id', userId)
+                    .single();
+
+                if (error) throw error;
+
+                if (profile) {
+                    isAdmin = profile.is_admin === true;
+                    document.getElementById('userPoints').textContent = profile.total_points;
+                    document.getElementById('userAvatar').textContent = profile.avatar_emoji;
+                    
+                    // Update currentUser.id to use LINE ID for consistency
+                    currentUser.id = userId;
+                }
+                
+                updateUserInterface();
+            } catch (error) {
+                console.error('Error loading user profile:', error);
+            }
+        }
+
+        function updateUserInterface() {
+            // Update user display with LIFF data if available
+            if (useLiff && liffUser) {
+                // Use LINE profile picture if available
+                if (liffUser.pictureUrl) {
+                    const avatarElement = document.getElementById('userAvatar');
+                    avatarElement.innerHTML = `<img src="${liffUser.pictureUrl}" alt="${liffUser.displayName}" class="w-full h-full rounded-full object-cover">`;
+                } else {
+                    document.getElementById('userAvatar').textContent = liffUser.displayName ? liffUser.displayName.charAt(0) : '👤';
+                }
+            }
+
+            // Show/hide admin buttons
+            const addChallengeBtn = document.getElementById('addChallengeBtn');
+            const addEventBtn = document.getElementById('addEventBtn');
+            const adminBadge = document.getElementById('adminBadge');
+
+            if (isAdmin) {
+                addChallengeBtn.classList.remove('hidden');
+                addEventBtn.classList.remove('hidden');
+                adminBadge.classList.remove('hidden');
+            } else {
+                addChallengeBtn.classList.add('hidden');
+                addEventBtn.classList.add('hidden');
+                adminBadge.classList.add('hidden');
+            }
+        }
+
+        function updateConnectionStatus(status) {
+            document.getElementById('connectionStatus').textContent = status;
+        }
+
+        async function loadAllData() {
+            await Promise.all([
+                loadChallenges(),
+                loadMyChallenges(),
+                loadMyEvents(),
+                loadEvents(),
+                loadLeaderboard(),
+                loadGallery()
+            ]);
+        }
+
+        // Data loading functions
+        async function loadChallenges() {
+            let challenges = [];
+            
+            if (useSupabase && currentUser) {
+                try {
+                    const lineUserId = liffUser ? liffUser.userId : currentUser.id;
+                    
+                    console.log('💪 Loading challenges for user:', lineUserId);
+                    
+                    // Get all challenges with user join status
+                    const { data, error } = await supabase
+                        .from('challenges')
+                        .select(`
+                            *,
+                            user_challenges!left (
+                                user_id,
+                                progress_days,
+                                current_streak
+                            )
+                        `)
+                        .eq('is_active', true)
+                        .order('created_at', { ascending: false });
+                    
+                    if (error) throw error;
+                    
+                    console.log('💪 Raw challenges data from database:', data);
+                    
+                    challenges = data.map(c => {
+                        // Check if current user has joined this challenge
+                        const userChallenge = c.user_challenges?.find(uc => uc.user_id === lineUserId);
+                        const hasJoined = !!userChallenge;
+                        
+                        console.log(`💪 Challenge "${c.name}" (ID: ${c.id}):`, {
+                            userChallenges: c.user_challenges,
+                            currentUserId: lineUserId,
+                            hasJoined: hasJoined
+                        });
+                        
+                        return {
+                            id: c.id,
+                            name: c.name,
+                            emoji: c.emoji,
+                            duration: c.duration_days,
+                            participants: c.participant_count || 0,
+                            joined: hasJoined,
+                            description: c.description
+                        };
+                    });
+                    
+                    console.log('💪 Processed challenges:', challenges.map(c => ({
+                        id: c.id,
+                        name: c.name,
+                        joined: c.joined
+                    })));
+                    
+                } catch (error) {
+                    console.error('❌ Error loading challenges:', error);
+                    console.error('❌ Error details:', error.message);
+                    challenges = demoData.challenges;
+                }
+            } else {
+                challenges = demoData.challenges;
+            }
+
+            renderChallenges(challenges);
+        }
+
+        async function loadEvents() {
+            let events = [];
+            
+            if (useSupabase && currentUser) {
+                try {
+                    const lineUserId = liffUser ? liffUser.userId : currentUser.id;
+                    
+                    console.log('🎉 Loading events for user:', lineUserId);
+                    
+                    // Get all events with user join status
+                    const { data, error } = await supabase
+                        .from('events')
+                        .select(`
+                            *,
+                            user_events!left (
+                                user_id,
+                                completed
+                            )
+                        `)
+                        .eq('is_active', true)
+                        .order('start_date', { ascending: true });
+                    
+                    if (error) throw error;
+                    
+                    console.log('🎉 Raw events data from database:', data);
+                    
+                    events = data.map(e => {
+                        // Check if current user has joined this event
+                        const userEvent = e.user_events?.find(ue => ue.user_id === lineUserId);
+                        const hasJoined = !!userEvent;
+                        
+                        console.log(`🎉 Event "${e.name}" (ID: ${e.id}):`, {
+                            userEvents: e.user_events,
+                            currentUserId: lineUserId,
+                            hasJoined: hasJoined
+                        });
+                        
+                        return {
+                            id: e.id,
+                            name: e.name,
+                            emoji: e.emoji,
+                            startDate: e.start_date,
+                            startTime: e.start_time,
+                            endDate: e.end_date,
+                            endTime: e.end_time,
+                            participants: e.participant_count || 0,
+                            images: e.images || [],
+                            description: e.description,
+                            location: e.location,
+                            points: e.completion_points,
+                            joined: hasJoined
+                        };
+                    });
+                    
+                    console.log('🎉 Processed events:', events.map(e => ({
+                        id: e.id,
+                        name: e.name,
+                        joined: e.joined
+                    })));
+                    
+                } catch (error) {
+                    console.error('❌ Error loading events:', error);
+                    console.error('❌ Error details:', error.message);
+                    events = demoData.events;
+                }
+            } else {
+                events = demoData.events;
+            }
+
+            renderEvents(events);
+        }
+
+        async function loadGallery() {
+            let proofs = [];
+            
+            if (useSupabase) {
+                try {
+                    const { data, error } = await supabase
+                        .from('gallery_photos')
+                        .select('*');
+                    
+                    if (error) throw error;
+                    proofs = data.map(p => ({
+                        id: p.id,
+                        user_name: p.user_name,
+                        challenge_name: p.challenge_name,
+                        challenge_emoji: p.challenge_emoji,
+                        photo_url: p.photo_url,
+                        shared_to_gallery: p.shared_to_gallery,
+                        points_earned: p.points_earned,
+                        created_at: p.created_at
+                    }));
+                } catch (error) {
+                    console.error('Error loading gallery:', error);
+                    proofs = demoData.proofs;
+                }
+            } else {
+                proofs = demoData.proofs;
+            }
+
+            renderGallery(proofs);
+        }
+
+        // Photo upload functions for Supabase Storage
+        async function uploadPhotoToStorage(file, userId) {
+            if (!supabase || !useSupabase) return null;
+            
+            try {
+                // Use LINE User ID for folder structure
+                const lineUserId = liffUser ? liffUser.userId : userId;
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${lineUserId}/${Date.now()}.${fileExt}`;
+                
+                console.log('📤 Uploading photo for LINE user:', lineUserId);
+                
+                const { data, error } = await supabase.storage
+                    .from('user-photos')
+                    .upload(fileName, file);
+                    
+                if (error) throw error;
+                
+                return {
+                    path: data.path,
+                    size: file.size,
+                    type: file.type
+                };
+            } catch (error) {
+                console.error('Error uploading photo:', error);
+                return null;
+            }
+        }
+
+        async function saveProofToDatabase(proofData) {
+            if (!supabase || !useSupabase) return null;
+            
+            try {
+                // Use LINE User ID for database records
+                const lineUserId = liffUser ? liffUser.userId : currentUser.id;
+                
+                console.log('💾 Saving proof for LINE user:', lineUserId);
+                
+                const { data, error } = await supabase
+                    .from('proofs')
+                    .insert([{
+                        user_id: lineUserId,  // Use LINE User ID
+                        challenge_id: proofData.challengeId,
+                        event_id: proofData.eventId,
+                        storage_path: proofData.storagePath,
+                        photo_url: proofData.photoUrl,
+                        file_size: proofData.fileSize,
+                        file_type: proofData.fileType,
+                        shared_to_gallery: proofData.shareToGallery,
+                        points_earned: proofData.pointsEarned
+                    }])
+                    .select()
+                    .single();
+                    
+                if (error) throw error;
+                return data;
+            } catch (error) {
+                console.error('Error saving proof:', error);
+                return null;
+            }
+        }
+
+        async function loadMyChallenges() {
+            let myChallenges = [];
+            
+            if (useSupabase && currentUser) {
+                try {
+                    // Use LINE User ID for database queries
+                    const lineUserId = liffUser ? liffUser.userId : currentUser.id;
+                    
+                    console.log('📋 Loading challenges for LINE user:', lineUserId);
+                    
+                    // Load user's challenges from database
+                    const { data, error } = await supabase
+                        .from('user_challenges')
+                        .select(`
+                            *,
+                            challenges (
+                                name,
+                                emoji,
+                                duration_days,
+                                description
+                            )
+                        `)
+                        .eq('user_id', lineUserId);
+                    
+                    if (error) throw error;
+                    
+                    myChallenges = data.map(uc => ({
+                        id: uc.challenge_id,
+                        name: uc.challenges.name,
+                        emoji: uc.challenges.emoji,
+                        progress: uc.progress_days,
+                        total: uc.challenges.duration_days,
+                        streak: uc.current_streak,
+                        doneToday: uc.completed_today
+                    }));
+                    
+                    console.log('📋 Loaded challenges from database:', myChallenges.length);
+                    
+                } catch (error) {
+                    console.error('Error loading user challenges:', error);
+                    // Fallback to empty array for testing
+                    myChallenges = [];
+                }
+            } else {
+                // Start with empty challenges so you can test joining
+                myChallenges = [];
+            }
+            
+            renderMyChallenges(myChallenges);
+        }
+
+        async function loadMyEvents() {
+            let myEvents = [];
+            
+            if (useSupabase && currentUser) {
+                try {
+                    // Use LINE User ID for database queries
+                    const lineUserId = liffUser ? liffUser.userId : currentUser.id;
+                    
+                    console.log('🎉 Loading events for LINE user:', lineUserId);
+                    
+                    // Load user's events from database
+                    const { data, error } = await supabase
+                        .from('user_events')
+                        .select(`
+                            *,
+                            events (
+                                name,
+                                emoji,
+                                start_date,
+                                start_time,
+                                end_date,
+                                end_time,
+                                location,
+                                completion_points,
+                                description
+                            )
+                        `)
+                        .eq('user_id', lineUserId);
+                    
+                    if (error) throw error;
+                    
+                    myEvents = data.map(ue => ({
+                        id: ue.event_id,
+                        name: ue.events.name,
+                        emoji: ue.events.emoji,
+                        startDate: ue.events.start_date,
+                        startTime: ue.events.start_time,
+                        endDate: ue.events.end_date,
+                        endTime: ue.events.end_time,
+                        location: ue.events.location,
+                        points: ue.events.completion_points,
+                        description: ue.events.description,
+                        completed: ue.completed,
+                        type: 'event'
+                    }));
+                    
+                } catch (error) {
+                    console.error('Error loading user events:', error);
+                    // Fallback to demo data
+                    myEvents = demoData.myEvents;
+                }
+            } else {
+                // Use demo data for now
+                myEvents = demoData.myEvents;
+            }
+            
+            renderMyEvents(myEvents);
+        }
+
+        async function loadLeaderboard() {
+            let leaderboard = [];
+            
+            if (useSupabase) {
+                try {
+                    const { data, error } = await supabase
+                        .from('users')
+                        .select('id, username, total_points, avatar_emoji, is_admin')
+                        .order('total_points', { ascending: false })
+                        .limit(20);
+                    
+                    if (error) throw error;
+                    
+                    leaderboard = data.map((u, index) => ({
+                        rank: index + 1,
+                        name: u.username,
+                        points: u.total_points,
+                        avatar: u.avatar_emoji,
+                        role: u.is_admin ? 'admin' : 'user',
+                        id: u.id
+                    }));
+                    
+                    console.log('📊 Leaderboard loaded:', leaderboard);
+                    console.log('👤 Current LINE user ID:', liffUser?.userId);
+                    
+                } catch (error) {
+                    console.error('Error loading leaderboard:', error);
+                    leaderboard = demoData.leaderboard;
+                }
+            } else {
+                leaderboard = demoData.leaderboard;
+            }
+
+            renderLeaderboard(leaderboard);
+        }
+
+        // Admin functions
+        async function createChallenge(challengeData) {
+            if (useSupabase && isAdmin) {
+                try {
+                    const { data, error } = await supabase
+                        .from('challenges')
+                        .insert([{
+                            name: challengeData.name,
+                            emoji: challengeData.emoji,
+                            duration_days: challengeData.duration,
+                            description: challengeData.description,
+                            created_by: liffUser ? liffUser.userId : currentUser.id  // Use LINE User ID
+                        }])
+                        .select()
+                        .single();
+                    
+                    if (error) throw error;
+                    
+                    showToast(`Challenge "${challengeData.name}" created successfully! 🎉`);
+                    await loadChallenges();
+                    return true;
+                } catch (error) {
+                    console.error('Error creating challenge:', error);
+                    showToast('Error creating challenge. Please try again.');
+                    return false;
+                }
+            } else {
+                // Demo mode
+                const newChallenge = {
+                    id: Date.now(),
+                    name: challengeData.name,
+                    emoji: challengeData.emoji,
+                    duration: challengeData.duration,
+                    participants: 0,
+                    joined: false,
+                    description: challengeData.description
+                };
+                demoData.challenges.push(newChallenge);
+                renderChallenges(demoData.challenges);
+                showToast(`Challenge "${challengeData.name}" created successfully! 🎉`);
+                return true;
+            }
+        }
+
+        async function createEvent(eventData) {
+            if (useSupabase && isAdmin) {
+                try {
+                    const { data, error } = await supabase
+                        .from('events')
+                        .insert([{
+                            name: eventData.name,
+                            emoji: eventData.emoji,
+                            description: eventData.description,
+                            location: eventData.location,
+                            start_date: eventData.startDate,
+                            start_time: eventData.startTime,
+                            end_date: eventData.endDate,
+                            end_time: eventData.endTime,
+                            completion_points: eventData.points,
+                            images: eventData.images,
+                            created_by: liffUser ? liffUser.userId : currentUser.id  // Use LINE User ID
+                        }])
+                        .select()
+                        .single();
+                    
+                    if (error) throw error;
+                    
+                    showToast(`Event "${eventData.name}" created successfully! 🎉`);
+                    await loadEvents();
+                    return true;
+                } catch (error) {
+                    console.error('Error creating event:', error);
+                    showToast('Error creating event. Please try again.');
+                    return false;
+                }
+            } else {
+                // Demo mode
+                const newEvent = {
+                    id: Date.now(),
+                    name: eventData.name,
+                    emoji: eventData.emoji,
+                    startDate: eventData.startDate,
+                    startTime: eventData.startTime,
+                    endDate: eventData.endDate,
+                    endTime: eventData.endTime,
+                    participants: 0,
+                    images: eventData.images,
+                    description: eventData.description,
+                    location: eventData.location,
+                    points: eventData.points,
+                    joined: false
+                };
+                demoData.events.push(newEvent);
+                renderEvents(demoData.events);
+                showToast(`Event "${eventData.name}" created successfully! 🎉`);
+                return true;
+            }
+        }
+
+        // Rendering functions (same as before but with data parameters)
+        function renderChallenges(challenges) {
+            const grid = document.getElementById('challengeGrid');
+            const availableChallenges = challenges.filter(challenge => !challenge.joined);
+            grid.innerHTML = availableChallenges.map(challenge => `
+                <div class="bg-white rounded-xl shadow-md p-4 card-hover transition-all duration-300">
+                    <div class="text-center space-y-3">
+                        <div class="text-4xl">${challenge.emoji}</div>
+                        <h3 class="font-bold text-gray-800">${challenge.name}</h3>
+                        <div class="text-sm text-gray-600">
+                            <div>${challenge.duration} days</div>
+                            <div>${challenge.participants.toLocaleString()} participants</div>
+                            ${challenge.description ? `<div class="text-xs mt-2 text-gray-500">${challenge.description}</div>` : ''}
+                        </div>
+                        <button onclick="joinChallenge('${challenge.id}')" 
+                                class="w-full custom-red custom-red-hover text-white py-2 rounded-lg font-medium transition-colors">
+                            Join Challenge
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderEvents(events) {
+            const grid = document.getElementById('eventGrid');
+            const availableEvents = events.filter(event => !event.joined);
+            grid.innerHTML = availableEvents.map(event => {
+                const countdown = getCountdown(event.startDate, event.startTime);
+                return `
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden card-hover transition-all duration-300 cursor-pointer" onclick="showEventDetail('${event.id}')">
+                        <div class="h-48 bg-gray-200 overflow-hidden">
+                            <img src="${event.images[0] || 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=200&fit=crop'}" alt="${event.name}" 
+                                 class="w-full h-full object-cover"
+                                 onerror="this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div class="w-full h-full bg-gradient-to-r from-red-100 to-red-200 flex items-center justify-center text-4xl hidden">
+                                ${event.emoji}
+                            </div>
+                        </div>
+                        <div class="p-4 space-y-3">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xl">${event.emoji}</span>
+                                <h3 class="font-bold text-gray-800">${event.name}</h3>
+                            </div>
+                            <div class="text-sm text-gray-600">
+                                <div>📅 ${new Date(event.startDate).toLocaleDateString()}</div>
+                                <div>👥 ${event.participants} participants</div>
+                                <div class="text-red-600 font-medium">⏰ ${countdown}</div>
+                                <div class="text-green-600 font-medium">🎁 ${event.points} points</div>
+                            </div>
+                            <button onclick="event.stopPropagation(); joinEvent('${event.id}')" 
+                                    class="w-full custom-red custom-red-hover text-white py-2 rounded-lg font-medium transition-colors">
+                                Join Event
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderGallery(proofs) {
+            const grid = document.getElementById('galleryGrid');
+            const emptyState = document.getElementById('galleryEmpty');
+            const galleryCount = document.getElementById('galleryCount');
+            
+            // Update count
+            galleryCount.textContent = proofs.length;
+            
+            if (proofs.length === 0) {
+                grid.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            
+            grid.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+            
+            grid.innerHTML = proofs.map(proof => {
+                const date = new Date(proof.created_at);
+                const timeAgo = getTimeAgo(date);
+                
+                return `
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden card-hover transition-all duration-300 cursor-pointer" onclick="showGalleryPhotoDetail(${proof.id})">
+                        <div class="aspect-square overflow-hidden">
+                            <img src="${proof.photo_url}" alt="${proof.challenge_name}" 
+                                 class="w-full h-full object-cover"
+                                 onerror="this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div class="w-full h-full bg-gradient-to-r from-red-100 to-red-200 flex items-center justify-center text-4xl hidden">
+                                ${proof.challenge_emoji}
+                            </div>
+                        </div>
+                        <div class="p-3">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <div class="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center">
+                                    <span class="text-xs font-bold text-red-600">${proof.user_name.charAt(0)}</span>
+                                </div>
+                                <span class="text-sm font-medium text-gray-800 truncate">${proof.user_name}</span>
+                            </div>
+                            <div class="flex items-center space-x-1 mb-1">
+                                <span class="text-sm">${proof.challenge_emoji}</span>
+                                <span class="text-xs text-gray-600 truncate">${proof.challenge_name}</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-gray-500">${timeAgo}</span>
+                                <span class="text-xs text-green-600 font-medium">+${proof.points_earned}pts</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderMyChallenges(challenges) {
+            const grid = document.getElementById('myChallengeGrid');
+            
+            if (challenges.length === 0) {
+                grid.innerHTML = `
+                    <div class="text-center py-12">
+                        <div class="text-6xl mb-4">💪</div>
+                        <h3 class="text-lg font-bold text-gray-800 mb-2">No challenges joined yet!</h3>
+                        <p class="text-gray-600 mb-4">Join some challenges from the main board to start your fitness journey.</p>
+                        <button onclick="showSection('challengeBoard')" class="custom-red text-white px-6 py-3 rounded-lg font-medium">
+                            Browse Challenges
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            grid.innerHTML = challenges.map(challenge => {
+                const progressPercent = (challenge.progress / challenge.total) * 100;
+                const isCompleted = challenge.progress >= challenge.total;
+                return `
+                    <div class="bg-white rounded-xl shadow-md p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center space-x-3">
+                                <span class="text-2xl">${challenge.emoji}</span>
+                                <div>
+                                    <h3 class="font-bold text-gray-800">${challenge.name}</h3>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-sm text-gray-600">${challenge.progress}/${challenge.total} days</span>
+                                        <div class="flex items-center space-x-1">
+                                            <span class="streak-fire">🔥</span>
+                                            <span class="text-sm font-bold text-red-600">${challenge.streak}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            ${isCompleted ? `
+                                <div class="text-green-600 font-medium text-sm">🏆 Challenge Complete!</div>
+                            ` : !challenge.doneToday ? `
+                                <button onclick="openPhotoModal('challenge_${challenge.id}')" 
+                                        class="custom-red custom-red-hover text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:shadow-lg">
+                                    ✅ Done Today
+                                </button>
+                            ` : `
+                                <div class="text-green-600 font-medium text-sm">✅ Completed Today</div>
+                            `}
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="progress-bar h-2 rounded-full transition-all duration-500" 
+                                 style="width: ${progressPercent}%"></div>
+                        </div>
+                        ${isCompleted ? `
+                            <div class="mt-3 text-center">
+                                <div class="text-sm text-green-600 font-medium">🎉 Challenge completed! Great job!</div>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderMyEvents(events) {
+            const grid = document.getElementById('myEventGrid');
+            
+            if (events.length === 0) {
+                grid.innerHTML = `
+                    <div class="text-center py-12">
+                        <div class="text-6xl mb-4">🎉</div>
+                        <h3 class="text-lg font-bold text-gray-800 mb-2">No events joined yet!</h3>
+                        <p class="text-gray-600 mb-4">Join some events to participate in community activities.</p>
+                        <button onclick="showSection('events')" class="custom-red text-white px-6 py-3 rounded-lg font-medium">
+                            Browse Events
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            grid.innerHTML = events.map(event => {
+                const countdown = getCountdown(event.startDate, event.startTime);
+                const now = new Date();
+                const eventStart = new Date(`${event.startDate}T${event.startTime}`);
+                const eventEnd = new Date(`${event.endDate}T${event.endTime}`);
+                const isEventActive = now >= eventStart && now <= eventEnd;
+                const isEventPassed = now > eventEnd;
+                
+                return `
+                    <div class="bg-white rounded-xl shadow-md p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center space-x-3">
+                                <span class="text-2xl">${event.emoji}</span>
+                                <div>
+                                    <h3 class="font-bold text-gray-800">${event.name}</h3>
+                                    <div class="text-sm text-gray-600">
+                                        <div>📅 ${new Date(event.startDate).toLocaleDateString()}</div>
+                                        <div class="text-red-600 font-medium">⏰ ${countdown}</div>
+                                        ${isEventActive ? '<div class="text-green-600 font-bold">🟢 Event is LIVE!</div>' : ''}
+                                    </div>
+                                </div>
+                            </div>
+                            ${event.completed ? `
+                                <div class="text-green-600 font-medium text-sm">✅ Completed (+${event.points}pts)</div>
+                            ` : isEventPassed ? `
+                                <div class="text-gray-500 font-medium text-sm">⏰ Event Ended</div>
+                            ` : isEventActive ? `
+                                <button onclick="openPhotoModal('event_${event.id}')" 
+                                        class="custom-red custom-red-hover text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:shadow-lg">
+                                    ✅ Complete Event
+                                </button>
+                            ` : `
+                                <div class="text-blue-600 font-medium text-sm">📅 Upcoming Event</div>
+                            `}
+                        </div>
+                        <div class="text-sm text-gray-600">
+                            <div>🎁 Reward: ${event.points} points</div>
+                            <div>📍 ${event.location}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderLeaderboard(leaderboard) {
+            const list = document.getElementById('leaderboardList');
+            const currentUserId = liffUser ? liffUser.userId : currentUser?.id;
+            const userEntry = leaderboard.find(u => u.id === currentUserId || u.name === 'User123');
+            
+            console.log('🔍 Looking for user in leaderboard:', currentUserId);
+            console.log('🔍 Found user entry:', userEntry);
+            
+            // Update user rank display
+            if (userEntry) {
+                document.getElementById('userCurrentRank').textContent = `#${userEntry.rank}`;
+                document.getElementById('userCurrentPoints').textContent = userEntry.points.toLocaleString();
+                
+                // Calculate points needed for next rank
+                const nextRankUser = leaderboard.find(u => u.rank === userEntry.rank - 1);
+                if (nextRankUser) {
+                    const pointsNeeded = nextRankUser.points - userEntry.points + 1;
+                    document.getElementById('rankMessage').textContent = `🎯 You need ${pointsNeeded.toLocaleString()} more points to reach #${nextRankUser.rank}!`;
+                } else {
+                    document.getElementById('rankMessage').textContent = `🏆 You're at the top! Keep it up!`;
+                }
+            }
+            
+            list.innerHTML = leaderboard.map(user => {
+                let rankIcon = '';
+                if (user.rank === 1) rankIcon = '👑';
+                else if (user.rank === 2) rankIcon = '🥈';
+                else if (user.rank === 3) rankIcon = '🥉';
+                
+                const isCurrentUser = user.id === currentUserId || user.name === 'User123';
+                
+                return `
+                    <div class="flex items-center justify-between p-3 ${user.rank <= 3 ? 'bg-yellow-50 border border-yellow-200 rounded-lg' : ''}">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 flex items-center justify-center font-bold text-gray-600">
+                                ${rankIcon || user.rank}
+                            </div>
+                            <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center overflow-hidden">
+                                ${isCurrentUser && liffUser?.pictureUrl ? 
+                                    `<img src="${liffUser.pictureUrl}" alt="${user.name}" class="w-full h-full object-cover">` :
+                                    `<span class="text-lg">${user.avatar}</span>`
+                                }
+                            </div>
+                            <div>
+                                <div class="font-medium ${isCurrentUser ? 'text-red-600' : ''} flex items-center space-x-2">
+                                    <span>${isCurrentUser && liffUser?.displayName ? liffUser.displayName : user.name}</span>
+                                    ${user.role === 'admin' ? '<span class="admin-badge">Admin</span>' : ''}
+                                </div>
+                                <div class="text-sm text-gray-600">Rank #${user.rank}</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold text-red-600">${user.points.toLocaleString()}</div>
+                            <div class="text-sm text-gray-600">points</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Rest of the functions remain the same...
+        function showSection(sectionName) {
+            const sections = ['challengeBoard', 'myChallenges', 'events', 'leaderboard', 'gallery'];
+            sections.forEach(section => {
+                document.getElementById(section).classList.add('hidden');
+            });
+            
+            document.getElementById(sectionName).classList.remove('hidden');
+            
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Find the clicked nav item and make it active
+            const navItems = document.querySelectorAll('.nav-item');
+            const sectionMap = {
+                'challengeBoard': 0,
+                'myChallenges': 1,
+                'leaderboard': 2,
+                'events': 3,
+                'gallery': 4
+            };
+            
+            if (sectionMap[sectionName] !== undefined) {
+                navItems[sectionMap[sectionName]].classList.add('active');
+            }
+        }
+
+        async function joinChallenge(challengeId) {
+            if (useSupabase && currentUser) {
+                try {
+                    const lineUserId = liffUser ? liffUser.userId : currentUser.id;
+                    
+                    console.log('🔗 Attempting to join challenge:', challengeId, 'for user:', lineUserId);
+                    console.log('🔗 Supabase client:', supabase);
+                    console.log('🔗 Current user object:', currentUser);
+                    
+                    // First, let's check if the tables exist and are accessible
+                    console.log('🧪 Testing table access...');
+                    
+                    // Test challenges table access
+                    const { data: challengeTest, error: challengeTestError } = await supabase
+                        .from('challenges')
+                        .select('id, name')
+                        .eq('id', challengeId)
+                        .single();
+                    
+                    if (challengeTestError) {
+                        console.error('❌ Cannot access challenges table:', challengeTestError);
+                        console.error('❌ Error details:', challengeTestError.message);
+                        console.error('❌ Error hint:', challengeTestError.hint);
+                        console.error('❌ Error code:', challengeTestError.code);
+                        
+                        if (challengeTestError.code === 'PGRST116') {
+                            showToast('❌ Challenge not found in database!');
+                        } else if (challengeTestError.code === '42P01') {
+                            showToast('❌ Database table "challenges" does not exist!');
+                        } else {
+                            showToast('❌ Database access error. Check your RLS policies!');
+                        }
+                        return;
+                    }
+                    
+                    console.log('✅ Challenge found:', challengeTest);
+                    
+                    // Test users table access
+                    const { data: userTest, error: userTestError } = await supabase
+                        .from('users')
+                        .select('id, username')
+                        .eq('id', lineUserId)
+                        .single();
+                    
+                    if (userTestError) {
+                        console.error('❌ Cannot access users table:', userTestError);
+                        console.error('❌ Error details:', userTestError.message);
+                        
+                        if (userTestError.code === 'PGRST116') {
+                            console.log('👤 User not found, will create new user...');
+                            // Try to create user first
+                            const { data: newUser, error: createUserError } = await supabase
+                                .from('users')
+                                .insert({
+                                    id: lineUserId,
+                                    username: liffUser?.displayName || 'User',
+                                    email: liffUser?.email || `${lineUserId}@line.me`,
+                                    avatar_emoji: '👤',
+                                    total_points: 0,
+                                    current_streak: 0,
+                                    is_admin: false
+                                })
+                                .select()
+                                .single();
+                            
+                            if (createUserError) {
+                                console.error('❌ Failed to create user:', createUserError);
+                                showToast('❌ Failed to create user profile!');
+                                return;
+                            }
+                            
+                            console.log('✅ New user created:', newUser);
+                        } else {
+                            showToast('❌ User database access error!');
+                            return;
+                        }
+                    } else {
+                        console.log('✅ User found:', userTest);
+                    }
+                    
+                    // Check if user_challenges table exists and is accessible
+                    console.log('🧪 Testing user_challenges table...');
+                    const { data: existingChallenge, error: checkError } = await supabase
+                        .from('user_challenges')
+                        .select('*')
+                        .eq('user_id', lineUserId)
+                        .eq('challenge_id', challengeId)
+                        .maybeSingle(); // Use maybeSingle instead of single to avoid error when no rows
+                    
+                    if (checkError) {
+                        console.error('❌ Error checking user_challenges:', checkError);
+                        console.error('❌ Error details:', checkError.message);
+                        console.error('❌ Error code:', checkError.code);
+                        
+                        if (checkError.code === '42P01') {
+                            showToast('❌ Database table "user_challenges" does not exist!');
+                        } else {
+                            showToast('❌ Database access error. Check your RLS policies!');
+                        }
+                        return;
+                    }
+                    
+                    if (existingChallenge) {
+                        console.log('⚠️ User already joined this challenge:', existingChallenge);
+                        showToast('❌ You already joined this challenge!');
+                        return;
+                    }
+                    
+                    console.log('✅ User has not joined this challenge yet, proceeding...');
+                    
+                    // Add challenge to user's challenges
+                    console.log('📝 Inserting new user_challenge record...');
+                    const { data: insertData, error: insertError } = await supabase
+                        .from('user_challenges')
+                        .insert({
+                            user_id: lineUserId,
+                            challenge_id: parseInt(challengeId), // Ensure it's a number
+                            progress_days: 0,
+                            current_streak: 0,
+                            completed_today: false,
+                            joined_at: new Date().toISOString()
+                        })
+                        .select()
+                        .single();
+                    
+                    if (insertError) {
+                        console.error('❌ Error inserting user_challenge:', insertError);
+                        console.error('❌ Error details:', insertError.message);
+                        console.error('❌ Error hint:', insertError.hint);
+                        console.error('❌ Error code:', insertError.code);
+                        
+                        if (insertError.code === '23505') {
+                            showToast('❌ You already joined this challenge!');
+                        } else if (insertError.code === '23503') {
+                            showToast('❌ Challenge or user not found in database!');
+                        } else {
+                            showToast('❌ Failed to join challenge. Check database permissions!');
+                        }
+                        return;
+                    }
+                    
+                    console.log('✅ Successfully joined challenge:', insertData);
+                    
+                    // Update user points
+                    console.log('💰 Updating user points...');
+                    const { data: pointsData, error: pointsError } = await supabase
+                        .from('users')
+                        .update({
+                            total_points: supabase.raw('total_points + 5')
+                        })
+                        .eq('id', lineUserId)
+                        .select()
+                        .single();
+                    
+                    if (pointsError) {
+                        console.error('❌ Error updating points:', pointsError);
+                        console.error('❌ Error details:', pointsError.message);
+                        // Don't return here, the challenge join was successful
+                    } else {
+                        console.log('✅ Successfully updated user points:', pointsData);
+                    }
+                    
+                    // Reload data
+                    console.log('🔄 Reloading data...');
+                    await loadChallenges();
+                    await loadMyChallenges();
+                    await loadUserProfile();
+                    
+                    showToast(`✅ Joined ${challengeTest.name}! +5 points 🎉`);
+                    
+                    // Switch to My Challenges tab to show the joined challenge
+                    showSection('myChallenges');
+                    
+                } catch (error) {
+                    console.error('❌ Unexpected error joining challenge:', error);
+                    console.error('❌ Error stack:', error.stack);
+                    showToast('❌ Failed to join challenge. Check console for details.');
+                }
+            } else {
+                // Demo implementation - check for duplicates
+                const existingChallenge = demoData.myChallenges.find(c => c.id == challengeId);
+                if (existingChallenge) {
+                    showToast('❌ You already joined this challenge!');
+                    return;
+                }
+                
+                const challenge = demoData.challenges.find(c => c.id == challengeId);
+                if (challenge && !challenge.joined) {
+                    challenge.joined = true;
+                    demoData.myChallenges.push({
+                        id: challengeId,
+                        name: challenge.name,
+                        emoji: challenge.emoji,
+                        progress: 0,
+                        total: challenge.duration,
+                        streak: 0,
+                        doneToday: false
+                    });
+                    
+                    updatePoints(5);
+                    renderChallenges(demoData.challenges);
+                    renderMyChallenges(demoData.myChallenges);
+                    showToast(`✅ Joined ${challenge.name}! +5 points 🎉`);
+                    
+                    // Switch to My Challenges tab
+                    showSection('myChallenges');
+                }
+            }
+        }
+
+        async function joinEvent(eventId) {
+            if (useSupabase && currentUser) {
+                try {
+                    const lineUserId = liffUser ? liffUser.userId : currentUser.id;
+                    
+                    console.log('🎉 Attempting to join event:', eventId, 'for user:', lineUserId);
+                    console.log('🎉 Supabase client:', supabase);
+                    console.log('🎉 Current user object:', currentUser);
+                    
+                    // First, let's check if the tables exist and are accessible
+                    console.log('🧪 Testing event table access...');
+                    
+                    // Test events table access
+                    const { data: eventTest, error: eventTestError } = await supabase
+                        .from('events')
+                        .select('id, name')
+                        .eq('id', eventId)
+                        .single();
+                    
+                    if (eventTestError) {
+                        console.error('❌ Cannot access events table:', eventTestError);
+                        console.error('❌ Error details:', eventTestError.message);
+                        console.error('❌ Error hint:', eventTestError.hint);
+                        console.error('❌ Error code:', eventTestError.code);
+                        
+                        if (eventTestError.code === 'PGRST116') {
+                            showToast('❌ Event not found in database!');
+                        } else if (eventTestError.code === '42P01') {
+                            showToast('❌ Database table "events" does not exist!');
+                        } else {
+                            showToast('❌ Database access error. Check your RLS policies!');
+                        }
+                        return;
+                    }
+                    
+                    console.log('✅ Event found:', eventTest);
+                    
+                    // Test users table access (ensure user exists)
+                    const { data: userTest, error: userTestError } = await supabase
+                        .from('users')
+                        .select('id, username')
+                        .eq('id', lineUserId)
+                        .single();
+                    
+                    if (userTestError) {
+                        console.error('❌ Cannot access users table:', userTestError);
+                        console.error('❌ Error details:', userTestError.message);
+                        
+                        if (userTestError.code === 'PGRST116') {
+                            console.log('👤 User not found, will create new user...');
+                            // Try to create user first
+                            const { data: newUser, error: createUserError } = await supabase
+                                .from('users')
+                                .insert({
+                                    id: lineUserId,
+                                    username: liffUser?.displayName || 'User',
+                                    email: liffUser?.email || `${lineUserId}@line.me`,
+                                    avatar_emoji: '👤',
+                                    total_points: 0,
+                                    current_streak: 0,
+                                    is_admin: false
+                                })
+                                .select()
+                                .single();
+                            
+                            if (createUserError) {
+                                console.error('❌ Failed to create user:', createUserError);
+                                showToast('❌ Failed to create user profile!');
+                                return;
+                            }
+                            
+                            console.log('✅ New user created:', newUser);
+                        } else {
+                            showToast('❌ User database access error!');
+                            return;
+                        }
+                    } else {
+                        console.log('✅ User found:', userTest);
+                    }
+                    
+                    // Check if user_events table exists and is accessible
+                    console.log('🧪 Testing user_events table...');
+                    const { data: existingEvent, error: checkError } = await supabase
+                        .from('user_events')
+                        .select('*')
+                        .eq('user_id', lineUserId)
+                        .eq('event_id', eventId)
+                        .maybeSingle(); // Use maybeSingle instead of single to avoid error when no rows
+                    
+                    if (checkError) {
+                        console.error('❌ Error checking user_events:', checkError);
+                        console.error('❌ Error details:', checkError.message);
+                        console.error('❌ Error code:', checkError.code);
+                        
+                        if (checkError.code === '42P01') {
+                            showToast('❌ Database table "user_events" does not exist!');
+                        } else {
+                            showToast('❌ Database access error. Check your RLS policies!');
+                        }
+                        return;
+                    }
+                    
+                    if (existingEvent) {
+                        console.log('⚠️ User already joined this event:', existingEvent);
+                        showToast('❌ You already joined this event!');
+                        return;
+                    }
+                    
+                    console.log('✅ User has not joined this event yet, proceeding...');
+                    
+                    // Add event to user's events
+                    console.log('📝 Inserting new user_event record...');
+                    const { data: insertData, error: insertError } = await supabase
+                        .from('user_events')
+                        .insert({
+                            user_id: lineUserId,
+                            event_id: parseInt(eventId), // Ensure it's a number
+                            completed: false,
+                            joined_at: new Date().toISOString()
+                        })
+                        .select()
+                        .single();
+                    
+                    if (insertError) {
+                        console.error('❌ Error inserting user_event:', insertError);
+                        console.error('❌ Error details:', insertError.message);
+                        console.error('❌ Error hint:', insertError.hint);
+                        console.error('❌ Error code:', insertError.code);
+                        
+                        if (insertError.code === '23505') {
+                            showToast('❌ You already joined this event!');
+                        } else if (insertError.code === '23503') {
+                            showToast('❌ Event or user not found in database!');
+                        } else {
+                            showToast('❌ Failed to join event. Check database permissions!');
+                        }
+                        return;
+                    }
+                    
+                    console.log('✅ Successfully joined event:', insertData);
+                    
+                    // Update user points for joining
+                    console.log('💰 Updating user points...');
+                    const { data: pointsData, error: pointsError } = await supabase
+                        .from('users')
+                        .update({
+                            total_points: supabase.raw('total_points + 5')
+                        })
+                        .eq('id', lineUserId)
+                        .select()
+                        .single();
+                    
+                    if (pointsError) {
+                        console.error('❌ Error updating points:', pointsError);
+                        console.error('❌ Error details:', pointsError.message);
+                        // Don't return here, the event join was successful
+                    } else {
+                        console.log('✅ Successfully updated user points:', pointsData);
+                    }
+                    
+                    // Reload data
+                    console.log('🔄 Reloading data...');
+                    await loadEvents();
+                    await loadMyEvents();
+                    await loadUserProfile();
+                    
+                    showToast(`✅ Joined ${eventTest.name}! +5 points 🎉`);
+                    
+                    // Switch to My Challenges tab to show the joined event
+                    showSection('myChallenges');
+                    
+                } catch (error) {
+                    console.error('❌ Unexpected error joining event:', error);
+                    console.error('❌ Error stack:', error.stack);
+                    showToast('❌ Failed to join event. Check console for details.');
+                }
+            } else {
+                // Demo mode
+                const event = demoData.events.find(e => e.id == eventId);
+                if (event && !event.joined) {
+                    event.joined = true;
+                    demoData.myEvents.push({
+                        ...event,
+                        completed: false,
+                        type: 'event'
+                    });
+                    
+                    updatePoints(5);
+                    renderEvents(demoData.events);
+                    renderMyEvents(demoData.myEvents);
+                    showToast(`✅ Joined ${event.name}! +5 points 🎉`);
+                    
+                    showSection('myChallenges');
+                    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+                    document.querySelectorAll('.nav-item')[1].classList.add('active');
+                }
+            }
+        }
+
+        function openPhotoModal(challengeId) {
+            console.log('Opening photo modal for:', challengeId);
+            const modal = document.getElementById('photoModal');
+            modal.classList.remove('hidden');
+            modal.dataset.challengeId = challengeId;
+            
+            // Reset modal state
+            document.getElementById('photoInput').value = '';
+            document.getElementById('shareToGallery').checked = false;
+            document.getElementById('photoPreview').classList.add('hidden');
+            document.getElementById('photoUploadArea').classList.remove('hidden');
+        }
+
+        function closePhotoModal() {
+            document.getElementById('photoModal').classList.add('hidden');
+            document.getElementById('photoInput').value = '';
+            document.getElementById('shareToGallery').checked = false;
+            document.getElementById('photoPreview').classList.add('hidden');
+            document.getElementById('photoUploadArea').classList.remove('hidden');
+        }
+
+        document.getElementById('photoInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    document.getElementById('previewImage').src = event.target.result;
+                    document.getElementById('photoPreview').classList.remove('hidden');
+                    document.getElementById('photoUploadArea').classList.add('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function removePhoto() {
+            document.getElementById('photoInput').value = '';
+            document.getElementById('photoPreview').classList.add('hidden');
+            document.getElementById('photoUploadArea').classList.remove('hidden');
+        }
+
+        // Wrapper function to handle errors
+        async function handleSubmitProgress() {
+            try {
+                console.log('🚀 Submit button clicked!');
+                await submitProgress();
+            } catch (error) {
+                console.error('❌ Error in submit progress:', error);
+                showToast('❌ Something went wrong. Please try again.');
+            }
+        }
+
+        async function submitProgress() {
+            const challengeIdStr = document.getElementById('photoModal').dataset.challengeId;
+            const photoInput = document.getElementById('photoInput');
+            const shareToGallery = document.getElementById('shareToGallery').checked;
+            const hasPhoto = photoInput.files.length > 0;
+            
+            const basePoints = hasPhoto ? 5 : 2;
+            let photoData = null;
+            
+            console.log('📤 Submitting progress for:', challengeIdStr);
+            console.log('📤 Has photo:', hasPhoto);
+            console.log('📤 Share to gallery:', shareToGallery);
+            console.log('📤 Use Supabase:', useSupabase);
+            console.log('📤 Current User:', currentUser);
+            
+            // Parse challenge/event ID properly with better error handling
+            let challengeId = null;
+            let eventId = null;
+            let isEvent = false;
+            
+            if (challengeIdStr.startsWith('event_')) {
+                isEvent = true;
+                eventId = parseInt(challengeIdStr.replace('event_', ''));
+                console.log('🎉 Processing event with ID:', eventId);
+            } else if (challengeIdStr.startsWith('challenge_')) {
+                challengeId = parseInt(challengeIdStr.replace('challenge_', ''));
+                console.log('💪 Processing challenge with ID:', challengeId);
+            } else {
+                // Handle plain number format
+                challengeId = parseInt(challengeIdStr);
+                console.log('💪 Processing challenge with plain ID:', challengeId);
+            }
+            
+            // Enhanced debugging for demo mode
+            if (!useSupabase) {
+                console.log('🎮 Demo Mode Debug Info:');
+                console.log('🔍 Looking for challenge ID:', challengeId, 'Type:', typeof challengeId);
+                console.log('🔍 Available challenges in demoData.myChallenges:');
+                demoData.myChallenges.forEach((c, index) => {
+                    console.log(`   ${index}: ID=${c.id} (${typeof c.id}), Name="${c.name}"`);
+                });
+                console.log('🔍 Available challenges in demoData.challenges:');
+                demoData.challenges.forEach((c, index) => {
+                    console.log(`   ${index}: ID=${c.id} (${typeof c.id}), Name="${c.name}", Joined=${c.joined}`);
+                });
+            }
+            
+            // Upload photo if provided and using Supabase
+            if (hasPhoto && useSupabase) {
+                photoData = await uploadPhotoToStorage(photoInput.files[0], currentUser.id);
+                if (!photoData) {
+                    showToast('❌ Failed to upload photo. Please try again.');
+                    return;
+                }
+            }
+            
+            // Handle Supabase database updates
+            if (useSupabase && currentUser) {
+                const lineUserId = liffUser ? liffUser.userId : currentUser.id;
+                
+                console.log('💾 Saving progress to database for user:', lineUserId);
+                
+                // Save proof to database
+                const proofData = {
+                    challengeId: challengeIdStr.startsWith('event_') ? null : parseInt(challengeIdStr.replace('challenge_', '')),
+                    eventId: challengeIdStr.startsWith('event_') ? parseInt(challengeIdStr.replace('event_', '')) : null,
+                    storagePath: photoData?.path,
+                    photoUrl: photoData ? null : (hasPhoto ? 'demo-url' : null),
+                    fileSize: photoData?.size,
+                    fileType: photoData?.type,
+                    shareToGallery: shareToGallery,
+                    pointsEarned: basePoints
+                };
+                
+                const savedProof = await saveProofToDatabase(proofData);
+                if (savedProof) {
+                    console.log('✅ Proof saved to database');
+                    await loadGallery(); // Refresh gallery
+                }
+                
+                // Update challenge progress in database
+                if (challengeIdStr.startsWith('challenge_')) {
+                    const challengeId = parseInt(challengeIdStr.replace('challenge_', ''));
+                    
+                    try {
+                        console.log('📊 Updating challenge progress for challenge:', challengeId);
+                        
+                        // First get current progress
+                        const { data: currentChallenge, error: fetchError } = await supabase
+                            .from('user_challenges')
+                            .select('progress_days, current_streak')
+                            .eq('user_id', lineUserId)
+                            .eq('challenge_id', challengeId)
+                            .single();
+                        
+                        if (fetchError) {
+                            console.error('❌ Error fetching current challenge:', fetchError);
+                            throw fetchError;
+                        }
+                        
+                        const newProgress = currentChallenge.progress_days + 1;
+                        const newStreak = currentChallenge.current_streak + 1;
+                        
+                        console.log('📊 Before update: Progress:', currentChallenge.progress_days, 'Streak:', currentChallenge.current_streak);
+                        console.log('📊 After update: Progress:', newProgress, 'Streak:', newStreak);
+                        
+                        // Update user_challenges table with explicit values
+                        const { error: updateError } = await supabase
+                            .from('user_challenges')
+                            .update({
+                                progress_days: newProgress,
+                                current_streak: newStreak,
+                                completed_today: true,
+                                last_completed_at: new Date().toISOString()
+                            })
+                            .eq('user_id', lineUserId)
+                            .eq('challenge_id', challengeId);
+                        
+                        if (updateError) {
+                            console.error('❌ Error updating challenge progress:', updateError);
+                            throw updateError;
+                        } else {
+                            console.log('✅ Challenge progress updated in database');
+                        }
+                        
+                        // Update user points
+                        const { error: pointsError } = await supabase
+                            .from('users')
+                            .update({
+                                total_points: supabase.raw(`total_points + ${basePoints}`)
+                            })
+                            .eq('id', lineUserId);
+                        
+                        if (pointsError) {
+                            console.error('❌ Error updating user points:', pointsError);
+                            throw pointsError;
+                        } else {
+                            console.log('✅ User points updated in database');
+                        }
+                        
+                        // Reload data to reflect changes
+                        console.log('🔄 Reloading challenge data...');
+                        await loadMyChallenges();
+                        await loadUserProfile();
+                        console.log('✅ Data reloaded successfully');
+                        
+                    } catch (error) {
+                        console.error('❌ Error updating challenge in database:', error);
+                        showToast('❌ Failed to update progress. Please try again.');
+                        return;
+                    }
+                }
+                
+                // Update event completion in database
+                if (challengeIdStr.startsWith('event_')) {
+                    const eventId = parseInt(challengeIdStr.replace('event_', ''));
+                    
+                    try {
+                        console.log('🎉 Updating event completion for event:', eventId);
+                        
+                        // Update user_events table
+                        const { error: updateError } = await supabase
+                            .from('user_events')
+                            .update({
+                                completed: true,
+                                completed_at: new Date().toISOString()
+                            })
+                            .eq('user_id', lineUserId)
+                            .eq('event_id', eventId);
+                        
+                        if (updateError) {
+                            console.error('❌ Error updating event completion:', updateError);
+                            throw updateError;
+                        } else {
+                            console.log('✅ Event completion updated in database');
+                        }
+                        
+                        // Get event points and update user total
+                        const { data: eventData } = await supabase
+                            .from('events')
+                            .select('completion_points')
+                            .eq('id', eventId)
+                            .single();
+                        
+                        const eventPoints = eventData?.completion_points || 50;
+                        const totalPoints = eventPoints + basePoints;
+                        
+                        // Update user points
+                        const { error: pointsError } = await supabase
+                            .from('users')
+                            .update({
+                                total_points: supabase.raw(`total_points + ${totalPoints}`)
+                            })
+                            .eq('id', lineUserId);
+                        
+                        if (pointsError) {
+                            console.error('❌ Error updating user points:', pointsError);
+                            throw pointsError;
+                        } else {
+                            console.log('✅ User points updated in database');
+                        }
+                        
+                        // Reload data to reflect changes
+                        await loadMyEvents();
+                        await loadUserProfile();
+                        
+                    } catch (error) {
+                        console.error('❌ Error updating event in database:', error);
+                        showToast('❌ Failed to complete event. Please try again.');
+                        return;
+                    }
+                }
+                
+                closePhotoModal();
+                confetti({
+                    particleCount: 150,
+                    spread: 80,
+                    origin: { y: 0.6 }
+                });
+                
+                const roastMessage = roastMessages[Math.floor(Math.random() * roastMessages.length)];
+                showToast(roastMessage + ` +${basePoints} points!`);
+                
+            } else {
+                // Handle demo mode updates
+                console.log('🎮 Demo mode - processing submission...');
+                
+                if (isEvent) {
+                    const event = demoData.myEvents.find(e => e.id === eventId);
+                    
+                    console.log('🎉 Looking for event with ID:', eventId);
+                    console.log('🎉 Available events:', demoData.myEvents.map(e => ({id: e.id, name: e.name})));
+                    console.log('🎉 Found event:', event);
+                    
+                    if (event) {
+                        event.completed = true;
+                        
+                        if (hasPhoto && !useSupabase) {
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                const proof = {
+                                    id: Date.now(),
+                                    user_name: "User123",
+                                    challenge_name: event.name,
+                                    challenge_emoji: event.emoji,
+                                    photo_url: e.target.result,
+                                    shared_to_gallery: shareToGallery,
+                                    points_earned: basePoints,
+                                    created_at: new Date().toISOString(),
+                                    type: 'event'
+                                };
+                                demoData.proofs.push(proof);
+                                if (shareToGallery) {
+                                    renderGallery(demoData.proofs.filter(p => p.shared_to_gallery));
+                                }
+                            };
+                            reader.readAsDataURL(photoInput.files[0]);
+                        }
+                        
+                        updatePoints(event.points + basePoints);
+                        closePhotoModal();
+                        
+                        confetti({
+                            particleCount: 150,
+                            spread: 80,
+                            origin: { y: 0.6 }
+                        });
+                        
+                        showToast(`Event completed! +${event.points + basePoints} points! 🎉`);
+                        renderMyEvents(demoData.myEvents);
+                    } else {
+                        console.error('❌ Event not found! ID:', eventId);
+                        showToast('❌ Event not found. Please try again.');
+                    }
+                } else {
+                    // Handle challenge submission with better ID matching
+                    console.log('🔍 Looking for challenge with ID:', challengeId);
+                    console.log('🔍 Available challenges:', demoData.myChallenges.map(c => ({id: c.id, name: c.name})));
+                    
+                    // Try multiple ways to find the challenge
+                    let challenge = demoData.myChallenges.find(c => c.id === challengeId);
+                    
+                    // If not found, try string comparison
+                    if (!challenge) {
+                        challenge = demoData.myChallenges.find(c => c.id == challengeId);
+                    }
+                    
+                    // If still not found, try converting both to strings
+                    if (!challenge) {
+                        challenge = demoData.myChallenges.find(c => String(c.id) === String(challengeId));
+                    }
+                    
+                    console.log('🔍 Found challenge:', challenge);
+                    
+                    if (challenge) {
+                        console.log('📊 Before update:', challenge.name, 'Progress:', challenge.progress, 'Streak:', challenge.streak);
+                        
+                        challenge.doneToday = true;
+                        challenge.progress += 1;
+                        challenge.streak += 1;
+                        
+                        console.log('📊 After update:', challenge.name, 'Progress:', challenge.progress, 'Streak:', challenge.streak);
+                        
+                        if (hasPhoto && !useSupabase) {
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                const proof = {
+                                    id: Date.now(),
+                                    user_name: "User123",
+                                    challenge_name: challenge.name,
+                                    challenge_emoji: challenge.emoji,
+                                    photo_url: e.target.result,
+                                    shared_to_gallery: shareToGallery,
+                                    points_earned: basePoints,
+                                    created_at: new Date().toISOString(),
+                                    type: 'challenge'
+                                };
+                                demoData.proofs.push(proof);
+                                if (shareToGallery) {
+                                    renderGallery(demoData.proofs.filter(p => p.shared_to_gallery));
+                                }
+                            };
+                            reader.readAsDataURL(photoInput.files[0]);
+                        }
+                        
+                        updatePoints(basePoints);
+                        closePhotoModal();
+                        
+                        // Force immediate UI update with logging
+                        console.log('🔄 Updating UI with new progress...');
+                        renderMyChallenges(demoData.myChallenges);
+                        console.log('✅ UI updated successfully');
+                        
+                        confetti({
+                            particleCount: 100,
+                            spread: 70,
+                            origin: { y: 0.6 }
+                        });
+                        
+                        const roastMessage = roastMessages[Math.floor(Math.random() * roastMessages.length)];
+                        showToast(roastMessage + ` +${basePoints} points!`);
+                        
+                        if (challenge.progress >= challenge.total) {
+                            setTimeout(() => {
+                                showCompletePopup(challenge);
+                            }, 1500);
+                        }
+                    } else {
+                        console.error('❌ Challenge not found after all attempts!');
+                        console.error('❌ Looking for ID:', challengeId, 'Type:', typeof challengeId);
+                        console.error('❌ Original string:', challengeIdStr);
+                        console.error('❌ Available challenge IDs:', demoData.myChallenges.map(c => ({id: c.id, type: typeof c.id})));
+                        console.error('❌ All my challenges:', demoData.myChallenges);
+                        
+                        // Show helpful message
+                        if (demoData.myChallenges.length === 0) {
+                            showToast('❌ No challenges joined yet! Join a challenge first from the Home tab.');
+                        } else {
+                            showToast('❌ Challenge not found. This might be a data sync issue.');
+                        }
+                    }
+                }
+            }
+        }
+
+        function showCompletePopup(challenge) {
+            const popup = document.getElementById('completePopup');
+            const badgeIcon = document.getElementById('badgeIcon');
+            const roastMessage = document.getElementById('roastMessage');
+            
+            if (challenge.streak >= 25) {
+                badgeIcon.textContent = '🏆';
+            } else if (challenge.streak >= 15) {
+                badgeIcon.textContent = '🥈';
+            } else {
+                badgeIcon.textContent = '🥉';
+            }
+            
+            roastMessage.textContent = roastMessages[Math.floor(Math.random() * roastMessages.length)];
+            
+            // Update share button to use LIFF sharing if available
+            const shareButton = popup.querySelector('button');
+            if (useLiff && liff.isApiAvailable('shareTargetPicker')) {
+                shareButton.onclick = () => shareToLine(challenge);
+            }
+            
+            popup.classList.remove('hidden');
+            
+            confetti({
+                particleCount: 200,
+                spread: 100,
+                origin: { y: 0.4 }
+            });
+            
+            updatePoints(20);
+        }
+
+        function shareToLine(challenge) {
+            if (useLiff && liff.isApiAvailable('shareTargetPicker')) {
+                liff.shareTargetPicker([
+                    {
+                        type: 'text',
+                        text: `🎉 I just completed the "${challenge.name}" challenge! ${challenge.streak} day streak! 💪\n\nJoin me on E-Cal for fitness challenges! 🔥`
+                    }
+                ]).then(() => {
+                    console.log('✅ Shared to LINE successfully');
+                    showToast('Shared to LINE! 📱');
+                }).catch((error) => {
+                    console.error('❌ LINE sharing failed:', error);
+                    showToast('Sharing failed. Please try again.');
+                });
+            } else {
+                // Fallback for non-LIFF environments
+                if (navigator.share) {
+                    navigator.share({
+                        title: 'E-Cal Challenge Complete!',
+                        text: `🎉 I just completed the "${challenge.name}" challenge! ${challenge.streak} day streak! 💪`,
+                        url: window.location.href
+                    });
+                } else {
+                    showToast('Sharing not available on this device');
+                }
+            }
+        }
+
+        function closeCompletePopup() {
+            document.getElementById('completePopup').classList.add('hidden');
+        }
+
+        function updatePoints(points) {
+            const currentPoints = parseInt(document.getElementById('userPoints').textContent);
+            document.getElementById('userPoints').textContent = currentPoints + points;
+            
+            const userEntry = demoData.leaderboard.find(u => u.name === 'User123');
+            if (userEntry) {
+                userEntry.points += points;
+                demoData.leaderboard.sort((a, b) => b.points - a.points);
+                demoData.leaderboard.forEach((user, index) => {
+                    user.rank = index + 1;
+                });
+                renderLeaderboard(demoData.leaderboard);
+            }
+        }
+
+        function getCountdown(startDate, startTime) {
+            const eventDateTime = new Date(`${startDate}T${startTime}`);
+            const now = new Date();
+            const diff = eventDateTime - now;
+            
+            if (diff <= 0) {
+                return "Event Started!";
+            }
+            
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            
+            if (days > 0) {
+                return `${days} days ${hours}h`;
+            } else if (hours > 0) {
+                return `${hours}h ${minutes}m`;
+            } else {
+                return `${minutes}m remaining`;
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => {
+                    document.body.removeChild(toast);
+                }, 300);
+            }, 3000);
+        }
+
+        function showEventDetail(eventId) {
+            const event = demoData.events.find(e => e.id == eventId);
+            if (!event) return;
+
+            const modal = document.getElementById('eventDetailModal');
+            const content = document.getElementById('eventDetailContent');
+            const countdown = getCountdown(event.startDate, event.startTime);
+            
+            content.innerHTML = `
+                <div class="relative">
+                    <div class="h-64 bg-gray-200 overflow-hidden">
+                        <img src="${event.images[0]}" alt="${event.name}" 
+                             class="w-full h-full object-cover"
+                             onerror="this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="w-full h-full bg-gradient-to-r from-red-100 to-red-200 flex items-center justify-center text-6xl hidden">
+                            ${event.emoji}
+                        </div>
+                    </div>
+                    <button onclick="closeEventDetail()" class="absolute top-4 right-4 bg-black bg-opacity-50 text-white rounded-full w-8 h-8 flex items-center justify-center">
+                        &times;
+                    </button>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div class="flex items-center space-x-3">
+                        <span class="text-3xl">${event.emoji}</span>
+                        <h2 class="text-2xl font-bold text-gray-800">${event.name}</h2>
+                    </div>
+                    <p class="text-gray-600">${event.description}</p>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div class="flex items-center space-x-2">
+                            <span>📅</span>
+                            <span>${new Date(event.startDate).toLocaleDateString()}</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span>⏰</span>
+                            <span>${event.startTime} - ${event.endTime}</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span>📍</span>
+                            <span>${event.location}</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span>👥</span>
+                            <span>${event.participants} participants</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span>⏰</span>
+                            <span class="text-red-600 font-medium">${countdown}</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span>🎁</span>
+                            <span class="text-green-600 font-medium">${event.points} points</span>
+                        </div>
+                    </div>
+                    <button onclick="joinEvent('${event.id}'); closeEventDetail();" 
+                            class="w-full custom-red custom-red-hover text-white py-3 rounded-lg font-medium transition-colors">
+                        Join Event
+                    </button>
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+        }
+
+        function closeEventDetail() {
+            document.getElementById('eventDetailModal').classList.add('hidden');
+        }
+
+        function showGalleryPhotoDetail(proofId) {
+            const proof = demoData.proofs.find(p => p.id === proofId);
+            if (!proof) return;
+
+            const modal = document.getElementById('galleryPhotoModal');
+            const date = new Date(proof.created_at);
+            const timeAgo = getTimeAgo(date);
+            
+            document.getElementById('galleryModalImage').src = proof.photo_url;
+            document.getElementById('galleryModalUserName').textContent = proof.user_name;
+            document.getElementById('galleryModalUserAvatar').textContent = proof.user_name.charAt(0);
+            document.getElementById('galleryModalDate').textContent = timeAgo;
+            document.getElementById('galleryModalEmoji').textContent = proof.challenge_emoji;
+            document.getElementById('galleryModalChallenge').textContent = proof.challenge_name;
+            document.getElementById('galleryModalPoints').textContent = `+${proof.points_earned} points earned`;
+            
+            modal.classList.remove('hidden');
+        }
+
+        function closeGalleryPhotoModal() {
+            document.getElementById('galleryPhotoModal').classList.add('hidden');
+        }
+
+        function getTimeAgo(date) {
+            const now = new Date();
+            const diffInSeconds = Math.floor((now - date) / 1000);
+            
+            if (diffInSeconds < 60) return 'Just now';
+            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+            if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+            
+            return date.toLocaleDateString();
+        }
+
+        function showAdminPanel(type) {
+            if (!isAdmin) {
+                showToast('❌ Only admins can create challenges and events!');
+                return;
+            }
+
+            const modal = document.getElementById('adminModal');
+            const title = document.getElementById('adminModalTitle');
+            const challengeFields = document.getElementById('challengeFields');
+            const eventFields = document.getElementById('eventFields');
+            
+            if (type === 'challenge') {
+                title.textContent = 'Add New Challenge';
+                challengeFields.classList.remove('hidden');
+                eventFields.classList.add('hidden');
+            } else {
+                title.textContent = 'Add New Event';
+                challengeFields.classList.add('hidden');
+                eventFields.classList.remove('hidden');
+            }
+            
+            modal.dataset.type = type;
+            modal.classList.remove('hidden');
+        }
+
+        function closeAdminModal() {
+            document.getElementById('adminModal').classList.add('hidden');
+            document.getElementById('adminForm').reset();
+            document.getElementById('imagePreview').classList.add('hidden');
+            document.getElementById('imagePreview').innerHTML = '';
+        }
+
+        document.getElementById('adminEventImages').addEventListener('change', function(e) {
+            const files = Array.from(e.target.files).slice(0, 5);
+            const preview = document.getElementById('imagePreview');
+            
+            if (files.length > 0) {
+                preview.classList.remove('hidden');
+                preview.innerHTML = '';
+                
+                files.forEach((file, index) => {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const div = document.createElement('div');
+                        div.className = 'relative';
+                        div.innerHTML = `
+                            <img src="${event.target.result}" alt="Preview ${index + 1}" class="w-full h-16 object-cover rounded-lg">
+                            <button type="button" onclick="removeImage(${index})" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center">×</button>
+                        `;
+                        preview.appendChild(div);
+                    };
+                    reader.readAsDataURL(file);
+                });
+            } else {
+                preview.classList.add('hidden');
+                preview.innerHTML = '';
+            }
+        });
+
+        function removeImage(index) {
+            const input = document.getElementById('adminEventImages');
+            const dt = new DataTransfer();
+            const files = Array.from(input.files);
+            
+            files.forEach((file, i) => {
+                if (i !== index) dt.items.add(file);
+            });
+            
+            input.files = dt.files;
+            input.dispatchEvent(new Event('change'));
+        }
+
+        document.getElementById('adminForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!isAdmin) {
+                showToast('❌ Only admins can create challenges and events!');
+                return;
+            }
+            
+            const modal = document.getElementById('adminModal');
+            const type = modal.dataset.type;
+            const name = document.getElementById('adminName').value.trim();
+            const emoji = document.getElementById('adminEmoji').value.trim() || '🏃‍♂️';
+            
+            if (!name) {
+                showToast('❌ Please enter a name!');
+                return;
+            }
+            
+            if (type === 'challenge') {
+                const duration = parseInt(document.getElementById('adminDuration').value) || 7;
+                const description = document.getElementById('adminChallengeDescription').value.trim();
+                
+                const challengeData = {
+                    name: name,
+                    emoji: emoji,
+                    duration: duration,
+                    description: description
+                };
+                
+                const success = await createChallenge(challengeData);
+                if (success) {
+                    closeAdminModal();
+                }
+            } else {
+                const today = new Date();
+                const tomorrow = new Date(today);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                
+                const startDate = document.getElementById('adminStartDate').value || tomorrow.toISOString().split('T')[0];
+                const startTime = document.getElementById('adminStartTime').value || '09:00';
+                const endDate = document.getElementById('adminEndDate').value || tomorrow.toISOString().split('T')[0];
+                const endTime = document.getElementById('adminEndTime').value || '17:00';
+                const location = document.getElementById('adminEventLocation').value.trim() || 'Bangkok, Thailand';
+                const description = document.getElementById('adminEventDetails').value.trim() || 'Join us for this amazing event!';
+                const points = parseInt(document.getElementById('adminEventPoints').value) || 50;
+                const imageFiles = document.getElementById('adminEventImages').files;
+                
+                const eventData = {
+                    name: name,
+                    emoji: emoji,
+                    startDate: startDate,
+                    startTime: startTime,
+                    endDate: endDate,
+                    endTime: endTime,
+                    location: location,
+                    description: description,
+                    points: points,
+                    images: imageFiles.length > 0 ? [] : ['https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=200&fit=crop']
+                };
+                
+                if (imageFiles.length > 0) {
+                    let processedImages = 0;
+                    for (let i = 0; i < imageFiles.length; i++) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            eventData.images.push(e.target.result);
+                            processedImages++;
+                            if (processedImages === imageFiles.length) {
+                                createEvent(eventData).then(success => {
+                                    if (success) closeAdminModal();
+                                });
+                            }
+                        };
+                        reader.readAsDataURL(imageFiles[i]);
+                    }
+                } else {
+                    const success = await createEvent(eventData);
+                    if (success) {
+                        closeAdminModal();
+                    }
+                }
+            }
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97c5db7c34467b42',t:'MTc1NzQxMjIyMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
