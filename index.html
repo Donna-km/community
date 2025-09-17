@@ -1556,7 +1556,8 @@ async function showEventDetail(eventId) {
   document.getElementById("eventDetailContent").innerHTML = html;
   document.getElementById("eventDetailModal").classList.remove("hidden");
 }
-const { data, error } = await supabase
+async function showEventDetail(eventId) {
+    const { data, error } = await supabase
     .from('events')
     .select('*')
     .eq('id', eventId)
@@ -1581,8 +1582,6 @@ const { data, error } = await supabase
   document.getElementById("eventDetailContent").innerHTML = html;
   document.getElementById("eventDetailModal").classList.remove("hidden");
 }
-`);
-        }
 
         // Leaderboard functions
         async function loadLeaderboard() {
