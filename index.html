@@ -1556,7 +1556,7 @@ async function showEventDetail(eventId) {
   document.getElementById("eventDetailContent").innerHTML = html;
   document.getElementById("eventDetailModal").classList.remove("hidden");
 }
- = await supabase
+const { data, error } = await supabase
     .from('events')
     .select('*')
     .eq('id', eventId)
