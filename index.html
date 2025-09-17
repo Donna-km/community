@@ -2470,10 +2470,9 @@ async function redirectToPaymentGateway(eventId, price) {
         // Initialize app when page loads
         document.addEventListener('DOMContentLoaded', initApp);
     </script>
-
 <!-- Event Detail Modal -->
 <div id="eventDetailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-  <div class="bg-white rounded-xl shadow-lg w-11/12 max-w-lg p-6 relative">
+  <div class="bg-white rounded-xl shadow-lg w-11/12 max-w-lg p-6 relative max-h-[90vh] overflow-y-auto">
     <button onclick="closeEventDetail()" class="absolute top-2 right-2 text-gray-500 hover:text-gray-800">✖</button>
     <div id="eventDetailContent" class="space-y-4">
       <!-- Content will be loaded dynamically -->
@@ -2482,32 +2481,6 @@ async function redirectToPaymentGateway(eventId, price) {
 </div>
 
 <script>
-async function showEventDetail(eventId) {
-  const { data, error } = await supabase
-    .from('events')
-    .select('*')
-    .eq('id', eventId)
-    .single();
-  if (error) {
-    alert("Error loading event detail");
-    return;
-  }
-  const e = data;
-  const html = `
-    <h2 class="text-2xl font-bold">${e.emoji || ""} ${e.name}</h2>
-    <p><strong>📅</strong> ${new Date(e.start_date).toLocaleString()} - ${new Date(e.end_date).toLocaleString()}</p>
-    <p><strong>📍</strong> ${e.location || "-"}</p>
-    <p><strong>ℹ️</strong> ${e.details || ""}</p>
-    <p><strong>💰</strong> ${e.price > 0 ? e.price + " THB" : "Free"}</p>
-    <p><strong>👥</strong> Participants: ${e.participant_count || 0}</p>
-  `;
-  document.getElementById("eventDetailContent").innerHTML = html;
-  document.getElementById("eventDetailModal").classList.remove("hidden");
-}
-function closeEventDetail() {
-  document.getElementById("eventDetailModal").classList.add("hidden");
-}
-    // แสดง Popup รายละเอียด Event
 async function showEventDetail(eventId) {
   const { data: e, error } = await supabase
     .from('events')
@@ -2520,7 +2493,7 @@ async function showEventDetail(eventId) {
     return;
   }
 
-  // รูปภาพ (slide ได้)
+  // แสดงรูป (ถ้ามี)
   let imagesHtml = "";
   if (e.image_urls && e.image_urls.length > 0) {
     try {
@@ -2536,7 +2509,7 @@ async function showEventDetail(eventId) {
     }
   }
 
-  // เนื้อหา popup
+  // เนื้อหา popup (ใช้ joinEvent เดิมของคุณ)
   const html = `
     <h2 class="text-2xl font-bold">${e.emoji || ""} ${e.name}</h2>
     ${imagesHtml}
@@ -2547,7 +2520,7 @@ async function showEventDetail(eventId) {
     <p><strong>👥</strong> Participants: ${e.participant_count || 0}</p>
 
     <div class="mt-4">
-      <button onclick="joinEvent(${e.id}, ${e.price}, ${e.completion_points || 0})" 
+      <button onclick="joinEvent(${e.id})" 
         class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
         Join Event (+${e.completion_points || 0} pts)
       </button>
@@ -2558,80 +2531,11 @@ async function showEventDetail(eventId) {
   document.getElementById("eventDetailModal").classList.remove("hidden");
 }
 
-// ปิด Popup
 function closeEventDetail() {
   document.getElementById("eventDetailModal").classList.add("hidden");
 }
+</script>
 
-// ฟังก์ชัน Join Event + อัพคะแนน + redirect
-async function joinEvent(eventId, price, points) {
-  try {
-    if (!currentUser || !currentUser.id) {
-      showToast("Please login first");
-      return;
-    }
-
-    // ถ้ามีราคา → ส่งไป Stripe Checkout
-    if (price > 0) {
-      const resp = await fetch("https://primary-production-49d9.up.railway.app/webhook-test/create-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          eventId,
-          userId: currentUser.id,
-          price: price
-        })
-      });
-
-      const data = await resp.json();
-      if (data.url) {
-        window.location.href = data.url; // ไปหน้าชำระเงิน Stripe
-        return;
-      } else {
-        showToast("❌ Payment session failed.");
-        return;
-      }
-    }
-
-    // ถ้า Free Event → Insert user_event + update count
-    const { error: insertError } = await supabase
-      .from('user_events')
-      .insert([{
-        user_id: currentUser.id,
-        event_id: eventId,
-        status: 'joined'
-      }]);
-
-    if (insertError) throw insertError;
-
-    // Update จำนวนคน
-    const { data: currentEvent } = await supabase
-      .from('events')
-      .select('participant_count')
-      .eq('id', eventId)
-      .single();
-
-    const newCount = (currentEvent?.participant_count || 0) + 1;
-    await supabase
-      .from('events')
-      .update({ participant_count: newCount })
-      .eq('id', eventId);
-
-    // Add points
-    await updateUserPoints(points);
-
-    showToast("✅ Joined event successfully!");
-
-    // Redirect → My Progress
-    setTimeout(() => {
-      document.getElementById("section-my-progress").click();
-    }, 800);
-
-  } catch (err) {
-    console.error("Error joining event:", err);
-    showToast("❌ Failed to join event");
-  }
-}
 
 </script>
 
