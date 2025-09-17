@@ -941,7 +941,100 @@
             
             return div;
         }
+ async function joinChallenge(challengeId) {
+            try {
+                debugLog(`🎯 Joining challenge: ${challengeId}`);
+                
+                if (!currentUser || !currentUser.id) {
+                    showToast('Please wait for user to load');
+                    return;
+                }
+                
+                // Check if already joined
+                const { data: existing, error: checkError } = await supabase
+                    .from('user_challenges')
+                    .select('id')
+                    .eq('user_id', currentUser.id)
+                    .eq('challenge_id', challengeId)
+                    .maybeSingle();
 
+                if (checkError && checkError.code !== 'PGRST116') {
+                    debugLog(`❌ Error checking existing challenge: ${checkError.message}`, 'error');
+                    throw checkError;
+                }
+
+                if (existing) {
+                    showToast('Already joined this challenge!');
+                    return;
+                }
+
+                // Join challenge
+                const { error: joinError } = await supabase
+                    .from('user_challenges')
+                    .insert([
+                        {
+                            user_id: currentUser.id,
+                            challenge_id: challengeId,
+                            progress: 0,
+                            streak: 0,
+                            completed_today: false
+                        }
+                    ]);
+
+                if (joinError) {
+                    debugLog(`❌ Error joining challenge: ${joinError.message}`, 'error');
+                    debugLog(`Full error: ${JSON.stringify(joinError)}`, 'error');
+                    throw joinError;
+                }
+
+                // Update participant count (don't fail if this fails)
+                try {
+                    // Get current count and increment by 1
+                    const { data: currentChallenge } = await supabase
+                        .from('challenges')
+                        .select('participant_count')
+                        .eq('id', challengeId)
+                        .single();
+                    
+                    const newCount = (currentChallenge?.participant_count || 0) + 1;
+                    
+                    const { error: updateError } = await supabase
+                        .from('challenges')
+                        .update({ participant_count: newCount })
+                        .eq('id', challengeId);
+
+                    if (updateError) {
+                        debugLog(`⚠️ Error updating participant count: ${updateError.message}`, 'warn');
+                    } else {
+                        debugLog(`✅ Updated challenge participant count to ${newCount}`);
+                    }
+                } catch (countError) {
+                    debugLog(`⚠️ Participant count update failed: ${countError.message}`, 'warn');
+                }
+
+                // Add points to user
+                const { data: challenge } = await supabase
+                    .from('challenges')
+                    .select('type, name')
+                    .eq('id', challengeId)
+                    .single();
+
+                const points = challenge?.type === 'premium' ? 10 : 5;
+                await updateUserPoints(points);
+
+                debugLog(`✅ Joined challenge: ${challenge?.name}`);
+                showToast(`Joined ${challenge?.name}! +${points} points`);
+                
+                // Reload challenges to update UI
+                setTimeout(async () => {
+                    await loadChallenges();
+                }, 500);
+
+            } catch (error) {
+                debugLog(`💥 Error joining challenge: ${error.message}`, 'error');
+                showToast(`Error: ${error.message}`);
+            }
+        }
 
                 async function loadMyChallenges() {
             try {
