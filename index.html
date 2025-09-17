@@ -2255,7 +2255,7 @@ async function redirectToPaymentGateway(eventId, price) {
                                         details: document.getElementById('eventDetails').value,
                                         completion_points: parseInt(document.getElementById('eventPoints').value),
                                         image_urls: imageUrls.length > 0 ? imageUrls : null,
-                                        created_by: currentUser.id
+                                        created_by: currentUser.id,
                                                                                 price: parseFloat(document.getElementById('eventPrice').value)
                                     }
                                 ]);
