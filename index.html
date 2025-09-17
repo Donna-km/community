@@ -1554,7 +1554,7 @@ const timeUntilEvent = eventDate.getTime() - now.getTime();
             debugLog(`Full error: ${JSON.stringify(joinError)}`, 'error');
             throw joinError;
         }
-
+closeEventDetail();
         // Update participant count (don't fail if this fails)
         try {
             const newCount = (eventData?.participant_count || 0) + 1;
