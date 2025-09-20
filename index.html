@@ -1622,7 +1622,8 @@ async function redirectToPaymentGateway(eventId, price) {
             body: JSON.stringify({ 
                 eventId, 
                 userId: currentUser.id, 
-                price: price 
+                price: price, 
+                image_url: event.image_urls
             })
         });
 
