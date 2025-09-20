@@ -1535,7 +1535,7 @@ const timeUntilEvent = eventDate.getTime() - now.getTime();
         // ✅ ถ้ามีราคา → ไปจ่ายเงินก่อน
         if (eventData.price > 0) {
             showToast(`💰 This event costs ${eventData.price} THB. Redirecting to payment...`);
-            redirectToPaymentGateway(eventData.id, eventData.price, eventData.image_urls);
+            redirectToPaymentGateway(eventData.id, eventData.price, eventData.image_urls[0]);
             return;
         }
 
@@ -1616,7 +1616,7 @@ closeEventDetail();
         
 async function redirectToPaymentGateway(eventId, price, image_url) {
   try {
-      
+    console.log("image_url:", image_url);   
     const resp = await fetch("https://primary-production-49d9.up.railway.app/webhook-test/create-session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
