@@ -1535,7 +1535,7 @@ const timeUntilEvent = eventDate.getTime() - now.getTime();
         // ✅ ถ้ามีราคา → ไปจ่ายเงินก่อน
         if (eventData.price > 0) {
             showToast(`💰 This event costs ${eventData.price} THB. Redirecting to payment...`);
-            redirectToPaymentGateway(eventData.id, eventData.price);
+            redirectToPaymentGateway(eventData.id, eventData.price, eventData.image_urls);
             return;
         }
 
@@ -1615,28 +1615,35 @@ closeEventDetail();
 
         
 async function redirectToPaymentGateway(eventId, price, image_url) {
-    try {
-        const resp = await fetch("https://primary-production-49d9.up.railway.app/webhook-test/create-session", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
-                eventId, 
-                userId: currentUser.id, 
-                price: price,
-                image_url: event.image_urls
-            })
-        });
+  try {
+    const resp = await fetch("https://primary-production-49d9.up.railway.app/webhook-test/create-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        eventId,
+        userId: currentUser.id,
+        price,
+        image_url // ✅ รับมาเป็น argument โดยตรง
+      })
+    });
 
-        const data = await resp.json();
-        if (data.url) {
-            window.location.href = data.url; // ส่งไปหน้า Stripe Checkout
-        } else {
-            showToast("❌ Payment session failed.");
-        }
-    } catch (err) {
-        showToast("💥 Error: " + err.message);
+    if (!resp.ok) {
+      const text = await resp.text();
+      throw new Error(`HTTP ${resp.status}: ${text}`);
     }
+
+    const data = await resp.json();
+    if (data.url) {
+      window.location.href = data.url;  // ส่งไปหน้า Stripe Checkout
+      return; // ✅ ป้องกันโค้ดข้างล่างรันต่อ
+    } else {
+      showToast("❌ Payment session failed.");
+    }
+  } catch (err) {
+    showToast("💥 Error: " + err.message);
+  }
 }
+
 
 
         function showEventDetail(eventId) {
