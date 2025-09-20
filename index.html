@@ -1616,6 +1616,10 @@ closeEventDetail();
         
 async function redirectToPaymentGateway(eventId, price, image_url) {
   try {
+      console.log("eventId:", eventId);
+console.log("price:", price);
+console.log("image_url:", image_url);
+
     const resp = await fetch("https://primary-production-49d9.up.railway.app/webhook-test/create-session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
