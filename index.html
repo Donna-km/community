@@ -1522,7 +1522,7 @@ const timeUntilEvent = eventDate.getTime() - now.getTime();
         // ✅ ดึง event data มาด้วย price
         const { data: eventData, error: fetchError } = await supabase
             .from('events')
-            .select('id, name, completion_points, price, participant_count')
+            .select('id, name, completion_points, price, participant_count, image_urls')
             .eq('id', eventId)
             .single();
 
