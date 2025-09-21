@@ -2547,10 +2547,10 @@ async function showEventDetail(eventId) {
     <p><strong>👥</strong> Participants: ${e.participant_count || 0}</p>
 
     <div class="mt-4">
-      <button onclick="joinEvent(${e.id})" 
-        class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
-        Join Event (+${e.completion_points || 0} pts)
-      </button>
+      <button onclick="redirectToPaymentGateway(${e.id}, ${e.price}, '${e.image_urls ? e.image_urls[0] : ""}')"
+  class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+  Join Event (+${e.completion_points || 0} pts)
+</button>
     </div>
   `;
 
