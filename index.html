@@ -2537,25 +2537,26 @@ async function showEventDetail(eventId) {
   }
 
   // เนื้อหา popup (ใช้ joinEvent เดิมของคุณ)
-  const html = `
-    <h2 class="text-2xl font-bold">${e.emoji || ""} ${e.name}</h2>
-    ${imagesHtml}
-    <p><strong>📅</strong> ${new Date(e.start_date).toLocaleString()} - ${new Date(e.end_date).toLocaleString()}</p>
-    <p><strong>📍</strong> ${e.location || "-"}</p>
-    <p><strong>ℹ️</strong> ${e.details || ""}</p>
-    <p><strong>💰</strong> ${e.price > 0 ? e.price + " THB" : "Free"}</p>
-    <p><strong>👥</strong> Participants: ${e.participant_count || 0}</p>
+const html = `
+  <h2 class="text-2xl font-bold">${e.emoji || ""} ${e.name}</h2>
+  ${imagesHtml}
+  <p><strong>📅</strong> ${new Date(e.start_date).toLocaleString()} - ${new Date(e.end_date).toLocaleString()}</p>
+  <p><strong>📍</strong> ${e.location || "-"}</p>
+  <p><strong>ℹ️</strong> ${e.details || ""}</p>
+  <p><strong>💰</strong> ${e.price > 0 ? e.price + " THB" : "Free"}</p>
+  <p><strong>👥</strong> Participants: ${e.participant_count || 0}</p>
 
-    <div class="mt-4">
-      <button onclick="redirectToPaymentGateway(${e.id}, ${e.price}, '${e.image_urls ? e.image_urls[0] : ""}')"
-  class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
-  Join Event (+${e.completion_points || 0} pts)
-</button>
-    </div>
-  `;
+  <div class="mt-4">
+    <button onclick="joinEvent(${e.id})"
+      class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+      Join Event (+${e.completion_points || 0} pts)
+    </button>
+  </div>
+`;
 
-  document.getElementById("eventDetailContent").innerHTML = html;
-  document.getElementById("eventDetailModal").classList.remove("hidden");
+document.getElementById("eventDetailContent").innerHTML = html;
+document.getElementById("eventDetailModal").classList.remove("hidden");
+
 }
 
 function closeEventDetail() {
