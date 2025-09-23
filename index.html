@@ -1485,6 +1485,15 @@ const endDate = new Date(
 
 const now = new Date();
 const timeUntilEvent = eventDate.getTime() - now.getTime();
+            // ➡️ Badge แสดง event type (Virtual / On the Ground)
+const typeBadge = `
+  <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full
+    ${event.event_type === 'Virtual' 
+      ? 'bg-purple-100 text-purple-700' 
+      : 'bg-green-100 text-green-700'}">
+    ${event.event_type}
+  </span>
+`;
             
             let countdownText = '';
             if (timeUntilEvent > 0) {
