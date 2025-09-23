@@ -1458,7 +1458,7 @@ function markEventDone(eventId) {
             }
         }
 
-        function createEventCard(event) {
+       function createEventCard(event) {
     const div = document.createElement('div');
     div.className = 'bg-white rounded-xl shadow-md overflow-hidden card-hover transition-all duration-300';
 
@@ -1472,13 +1472,9 @@ function markEventDone(eventId) {
       </span>
     `;
 
-    // ➡️ เช็คช่วง Registration
     const now = new Date();
-    const registerStart = event.register_start ? new Date(event.register_start) : null;
-    const registerEnd = event.register_end ? new Date(event.register_end) : null;
-    const isRegistrationOpen = registerStart && registerEnd && now >= registerStart && now <= registerEnd;
 
-    // Parse dates (โค้ดเก่าของคุณ)
+    // ✅ Parse Event Start
     const eventDateStr = event.start_date.replace('T', ' ').split('+')[0];
     const eventParts = eventDateStr.match(/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})/);
     const eventDate = new Date(
@@ -1489,6 +1485,7 @@ function markEventDone(eventId) {
         parseInt(eventParts[5])
     );
 
+    // ✅ Parse Event End
     const endDateStr = event.end_date.replace('T', ' ').split('+')[0];
     const endParts = endDateStr.match(/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})/);
     const endDate = new Date(
@@ -1499,6 +1496,38 @@ function markEventDone(eventId) {
         parseInt(endParts[5])
     );
 
+    // ✅ Parse Registration Start / End
+    let registerStart = null, registerEnd = null;
+
+    if (event.register_start) {
+        const regStartStr = event.register_start.replace('T', ' ').split('+')[0];
+        const regStartParts = regStartStr.match(/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})/);
+        registerStart = new Date(
+            parseInt(regStartParts[1]),
+            parseInt(regStartParts[2]) - 1,
+            parseInt(regStartParts[3]),
+            parseInt(regStartParts[4]),
+            parseInt(regStartParts[5])
+        );
+    }
+
+    if (event.register_end) {
+        const regEndStr = event.register_end.replace('T', ' ').split('+')[0];
+        const regEndParts = regEndStr.match(/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})/);
+        registerEnd = new Date(
+            parseInt(regEndParts[1]),
+            parseInt(regEndParts[2]) - 1,
+            parseInt(regEndParts[3]),
+            parseInt(regEndParts[4]),
+            parseInt(regEndParts[5])
+        );
+    }
+
+    // ✅ Registration Open Check
+    const isRegistrationOpen = registerStart && registerEnd &&
+        now >= registerStart && now <= registerEnd;
+
+    // Countdown text
     const timeUntilEvent = eventDate.getTime() - now.getTime();
     let countdownText = '';
     if (timeUntilEvent > 0) {
@@ -1521,7 +1550,7 @@ function markEventDone(eventId) {
         countdownText = '🔴 Event Ended';
     }
 
-    // ใช้รูปที่อัปโหลด หรือ default
+        // ใช้รูปที่อัปโหลด หรือ default
     let eventImage = '';
     if (event.image_urls && event.image_urls.length > 0) {
         eventImage = event.image_urls[0];
