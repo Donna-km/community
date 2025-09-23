@@ -1335,7 +1335,7 @@
         countdownText = '🔴 Event Ended';
     }
 
-    // ✅ Progress bar logic (ใช้ mission)
+    // ✅ Progress bar logic (เปลี่ยนจากนับวัน → นับ mission)
     const totalMissions = event.total_missions || 1;
 
     const todayStr = new Date().toISOString().split('T')[0];
@@ -1376,7 +1376,7 @@
         ${now >= eventDate && now <= endDate
             ? (isDoneToday
                 ? `<button class="w-full bg-green-500 text-white py-3 rounded-lg font-medium" disabled>
-                       ✅ Mission Submitted
+                       ✅ Mission Complete!!
                    </button>`
                 : `<button id="eventBtn_${event.id}" onclick="markEventDone(${event.id})"
                        class="w-full bg-red-500 text-white py-3 rounded-lg font-medium hover:bg-red-600 mb-2">
@@ -1397,11 +1397,6 @@
 
     return div;
 }
-
-    return div;
-}
-
-
 
         function markDone(challengeId) {
             currentChallengeId = challengeId;
