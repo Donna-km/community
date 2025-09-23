@@ -1294,20 +1294,20 @@
     const eventDateStr = event.start_date.replace('T', ' ').split('+')[0];
     const eventParts = eventDateStr.match(/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})/);
     const eventDate = new Date(
-        parseInt(eventParts[1]),
-        parseInt(eventParts[2]) - 1,
-        parseInt(eventParts[3]),
-        parseInt(eventParts[4]),
+        parseInt(eventParts[1]), 
+        parseInt(eventParts[2]) - 1, 
+        parseInt(eventParts[3]), 
+        parseInt(eventParts[4]), 
         parseInt(eventParts[5])
     );
 
     const endDateStr = event.end_date.replace('T', ' ').split('+')[0];
     const endParts = endDateStr.match(/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})/);
     const endDate = new Date(
-        parseInt(endParts[1]),
-        parseInt(endParts[2]) - 1,
-        parseInt(endParts[3]),
-        parseInt(endParts[4]),
+        parseInt(endParts[1]), 
+        parseInt(endParts[2]) - 1, 
+        parseInt(endParts[3]), 
+        parseInt(endParts[4]), 
         parseInt(endParts[5])
     );
 
@@ -1335,8 +1335,8 @@
         countdownText = '🔴 Event Ended';
     }
 
-    // ✅ Progress bar logic
-    const totalDays = Math.floor((endDate - eventDate) / (1000 * 60 * 60 * 24)) + 1;
+    // ✅ Progress bar logic (ใช้ mission)
+    const totalMissions = event.total_missions || 1;
 
     const todayStr = new Date().toISOString().split('T')[0];
     const lastDoneStr = event.user_events?.last_completed_date
@@ -1344,19 +1344,19 @@
         : null;
     const isDoneToday = (lastDoneStr === todayStr);
 
-    // ถ้ายังไม่เคย done เลย ให้ progress เริ่มที่ 0
-    let currentDay = event.user_events?.completed_count || 0;
-    if (isDoneToday && currentDay < totalDays) {
-        currentDay++;
+    // ถ้ายังไม่เคย submit เลย ให้ progress เริ่มที่ 0
+    let completedMissions = event.user_events?.missions_completed || 0;
+    if (isDoneToday && completedMissions < totalMissions) {
+        completedMissions++;
     }
 
     const progressText = now >= eventDate && now <= endDate
-        ? `🔥 Day ${currentDay} of ${totalDays}`
+        ? `🔥 Mission ${completedMissions} of ${totalMissions}`
         : "";
 
     const progressBar = now >= eventDate && now <= endDate ? `
         <div class="w-full bg-gray-200 rounded-full h-2 mb-4">
-            <div class="bg-green-500 h-2 rounded-full" style="width:${(currentDay / totalDays) * 100}%"></div>
+            <div class="bg-green-500 h-2 rounded-full" style="width:${(completedMissions / totalMissions) * 100}%"></div>
         </div>` : "";
 
     // ✅ Render card
@@ -1376,11 +1376,11 @@
         ${now >= eventDate && now <= endDate
             ? (isDoneToday
                 ? `<button class="w-full bg-green-500 text-white py-3 rounded-lg font-medium" disabled>
-                       ✅ Completed Today
+                       ✅ Mission Submitted
                    </button>`
                 : `<button id="eventBtn_${event.id}" onclick="markEventDone(${event.id})"
                        class="w-full bg-red-500 text-white py-3 rounded-lg font-medium hover:bg-red-600 mb-2">
-                       ✅ Done Today
+                       🚀 Submit Mission
                    </button>`)
             : now < eventDate
                 ? `<div class="w-full bg-gray-300 text-gray-600 py-2 rounded-lg font-medium text-center mb-2">
@@ -1394,6 +1394,9 @@
             🗑️ Remove Event
         </button>
     `;
+
+    return div;
+}
 
     return div;
 }
