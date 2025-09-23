@@ -2653,30 +2653,100 @@ async function showEventDetail(eventId) {
     }
   }
 
-   // เนื้อหา popup (ใช้ joinEvent เดิมของคุณ)
- const html = `
-  <h2 class="text-2xl font-bold">${e.emoji || ""} ${e.name}</h2>
-  ${imagesHtml}
-  <p><strong>📅</strong> ${new Date(e.start_date).toLocaleString()} - ${new Date(e.end_date).toLocaleString()}</p>
-  <p><strong>📍</strong> ${e.location || "-"}</p>
-  <p><strong>ℹ️</strong> ${e.details || ""}</p>
-  <p><strong>💰</strong> ${e.price > 0 ? e.price + " THB" : "Free"}</p>
-  <p><strong>👥</strong> Participants: ${e.participant_count || 0}</p>
+   // ➡️ สร้าง popup content ให้เหมือน event card แต่ละเอียดกว่า
+const now = new Date();
 
-  <div class="mt-4">
-    ${
-      e.price > 0
-        ? `<button onclick="redirectToPaymentGateway(${e.id}, ${e.price}, '${e.image_urls ? e.image_urls[0] : ""}')"
-            class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
-            Join Event (+${e.completion_points || 0} pts)
-          </button>`
-        : `<button onclick="joinEvent(${e.id})"
-            class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
-            Join Event (+${e.completion_points || 0} pts)
-          </button>`
-    }
+// ✅ Badge Event Type
+const typeBadge = `
+  <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full
+    ${e.event_type === 'Virtual' 
+      ? 'bg-purple-100 text-purple-700' 
+      : 'bg-green-100 text-green-700'}">
+    ${e.event_type}
+  </span>
+`;
+
+// ✅ Registration Period check
+let registerStart = null, registerEnd = null;
+if (e.register_start) {
+  const rs = e.register_start.replace('T', ' ').split('+')[0];
+  const parts = rs.match(/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})/);
+  registerStart = new Date(parts[1], parts[2]-1, parts[3], parts[4], parts[5]);
+}
+if (e.register_end) {
+  const re = e.register_end.replace('T', ' ').split('+')[0];
+  const parts = re.match(/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})/);
+  registerEnd = new Date(parts[1], parts[2]-1, parts[3], parts[4], parts[5]);
+}
+const isRegistrationOpen = registerStart && registerEnd && now >= registerStart && now <= registerEnd;
+
+// ✅ Event Countdown
+const startStr = e.start_date.replace('T', ' ').split('+')[0];
+const startParts = startStr.match(/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})/);
+const startDate = new Date(startParts[1], startParts[2]-1, startParts[3], startParts[4], startParts[5]);
+
+const endStr = e.end_date.replace('T', ' ').split('+')[0];
+const endParts = endStr.match(/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})/);
+const endDate = new Date(endParts[1], endParts[2]-1, endParts[3], endParts[4], endParts[5]);
+
+let countdownText = '';
+if (now < startDate) {
+  const diff = startDate - now;
+  const days = Math.floor(diff / (1000*60*60*24));
+  const hours = Math.floor((diff % (1000*60*60*24))/(1000*60*60));
+  countdownText = `⏰ Starts in ${days}d ${hours}h`;
+} else if (now >= startDate && now <= endDate) {
+  countdownText = '🟢 Event in Progress';
+} else {
+  countdownText = '🔴 Event Ended';
+}
+
+// ✅ Join button or closed
+let joinSection = '';
+if (!isRegistrationOpen) {
+  joinSection = `<div class="w-full bg-gray-300 text-gray-600 py-3 rounded-lg font-medium text-center mt-4">
+    🚫 Registration Closed
+  </div>`;
+} else {
+  if (e.price > 0) {
+    joinSection = `<button onclick="redirectToPaymentGateway(${e.id}, ${e.price}, '${e.image_urls ? e.image_urls[0] : ""}')"
+      class="w-full bg-red-500 text-white py-3 rounded-lg font-medium hover:bg-red-600 mt-4">
+      Join Event (+${e.completion_points || 0} pts)
+    </button>`;
+  } else {
+    joinSection = `<button onclick="joinEvent(${e.id})"
+      class="w-full bg-red-500 text-white py-3 rounded-lg font-medium hover:bg-red-600 mt-4">
+      Join Event (+${e.completion_points || 0} pts)
+    </button>`;
+  }
+}
+
+// ✅ Full popup HTML
+const html = `
+  <div class="p-4">
+    <div class="flex justify-between items-center mb-3">
+      <h2 class="text-2xl font-bold">${e.emoji || ""} ${e.name}</h2>
+      ${typeBadge}
+    </div>
+    ${imagesHtml}
+
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-2 mb-3 text-center text-sm font-medium">
+      ${countdownText}
+    </div>
+
+    <div class="space-y-2 text-sm text-gray-700">
+      <div>📅 <b>Event:</b> ${formatDate(e.start_date)} – ${formatDate(e.end_date)}</div>
+      <div>📝 <b>Registration:</b> ${registerStart ? formatDate(registerStart.toISOString()) : '-'} – ${registerEnd ? formatDate(registerEnd.toISOString()) : '-'}</div>
+      <div>📍 <b>Location:</b> ${e.location || "-"}</div>
+      <div>ℹ️ <b>Details:</b> ${e.details || "No details provided"}</div>
+      <div>💰 <b>Price:</b> ${e.price > 0 ? e.price + " THB" : "Free"}</div>
+      <div>👥 <b>Participants:</b> ${e.participant_count || 0}</div>
+    </div>
+
+    ${joinSection}
   </div>
 `;
+
 
   document.getElementById("eventDetailContent").innerHTML = html;
   document.getElementById("eventDetailModal").classList.remove("hidden");
