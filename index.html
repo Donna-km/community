@@ -2083,71 +2083,88 @@ async function redirectToPaymentGateway(eventId, price, image_url) {
                     }
 
                 } else if (currentEventId) {
-    // 📌 ดึงข้อมูล event จาก DB
-    const { data: event, error } = await supabase
-        .from('events')
-        .select('id, name, completion_points')
-        .eq('id', currentEventId)
-        .single();
+    // 📌 ดึงข้อมูล event จาก DB (เพิ่ม total_missions)
+const { data: event, error } = await supabase
+    .from('events')
+    .select('id, name, completion_points, total_missions') // ⬅️
+    .eq('id', currentEventId)
+    .single();
 
-    if (error) throw error;
+if (error) throw error;
 
-    // 📸 ถ้ามีรูปก็อัปโหลด
-    if (withPhoto) {
-        await uploadToGallery();
-    }
+// 📸 ถ้ามีรูปก็อัปโหลด
+if (withPhoto) {
+    await uploadToGallery();
+}
 
-    // 💰 ให้คะแนน
-    const pointsEarned = withPhoto ? event.completion_points : Math.floor(event.completion_points * 0.4);
-    await updateUserPoints(pointsEarned);
+// 💰 ให้คะแนน
+const pointsEarned = withPhoto ? event.completion_points : Math.floor(event.completion_points * 0.4);
+await updateUserPoints(pointsEarned);
 
-    // 🔔 Toast แจ้งผล
-    showToast(`Event completed! +${pointsEarned} points!`);
+// 🔔 Toast แจ้งผล
+showToast(`Event submitted! +${pointsEarned} points!`); // ⬅️ เปลี่ยนข้อความเล็กน้อย
 
-    // 🎉 Confetti
-    if (typeof confetti !== 'undefined') {
-        confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.6 }
-        });
-    }
+// 🎉 Confetti
+if (typeof confetti !== 'undefined') {
+    confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+    });
+}
 
-    // 🔘 เปลี่ยนปุ่มเป็น Completed
-    const btn = document.getElementById(`eventBtn_${event.id}`);
-    if (btn) {
-        btn.outerHTML = `<button class="w-full bg-green-500 text-white py-3 rounded-lg font-medium" disabled>
-                            ✅ Completed Today
-                         </button>`;
-    }
+// 🔘 เปลี่ยนปุ่มเป็น Submitted (แต่ยังไม่ complete)
+const btn = document.getElementById(`eventBtn_${event.id}`);
+if (btn) {
+    btn.outerHTML = `<button class="w-full bg-green-500 text-white py-3 rounded-lg font-medium" disabled>
+                        ✅ Mission Submitted
+                     </button>`;
+}
 
-    // ✅ อัปเดต user_events ใน DB
-    const { error: updateEventError } = await supabase
-        .from('user_events')
-        .update({
-            completed: true,
-            last_completed_date: new Date().toISOString()
-        })
-        .eq('user_id', currentUser.id)
-        .eq('event_id', currentEventId);
+// ✅ ดึง progress ปัจจุบันของ user
+const { data: ue, error: fetchUEError } = await supabase
+    .from('user_events')
+    .select('missions_completed')
+    .eq('user_id', currentUser.id)
+    .eq('event_id', currentEventId)
+    .single();
 
-    if (updateEventError) {
-        debugLog(`❌ Error updating user_events: ${updateEventError.message}`, 'error');
-        throw updateEventError;
-    }
+if (fetchUEError) throw fetchUEError;
 
-    // ✅ อัปเดต object event ใน memory ด้วย เพื่อให้ UI เปลี่ยนทันที
-    event.user_events = event.user_events || {};
-    event.user_events.completed = true;
-    event.user_events.last_completed_date = new Date().toISOString();
+const newMissions = (ue?.missions_completed || 0) + 1;
+const isCompleted = newMissions >= (event.total_missions || 1);
 
-    // 🎊 เรียก modal ฉลอง
+// ✅ อัปเดต user_events ใน DB
+const { error: updateEventError } = await supabase
+    .from('user_events')
+    .update({
+        missions_completed: newMissions,   // ⬅️ update progress
+        last_completed_date: new Date().toISOString(),
+        completed: isCompleted             // ⬅️ completed เฉพาะตอนครบ
+    })
+    .eq('user_id', currentUser.id)
+    .eq('event_id', currentEventId);
+
+if (updateEventError) {
+    debugLog(`❌ Error updating user_events: ${updateEventError.message}`, 'error');
+    throw updateEventError;
+}
+
+// ✅ อัปเดต object event ใน memory ด้วย เพื่อให้ UI เปลี่ยนทันที
+event.user_events = event.user_events || {};
+event.user_events.missions_completed = newMissions;  // ⬅️ sync
+event.user_events.last_completed_date = new Date().toISOString();
+event.user_events.completed = isCompleted;
+
+// 🎊 เรียก modal ฉลอง เฉพาะตอนครบทุก mission
+if (isCompleted) {   // ⬅️ เช็คก่อน
     showCompleteModal("event", event.completion_points, withPhoto);
+}
 
-    // 🔄 Reload myEvents ถ้าอยู่หน้า event
-    if (currentSection === 'myEvents') {
-        await loadMyEvents();
-    }
+// 🔄 Reload myEvents ถ้าอยู่หน้า event
+if (currentSection === 'myEvents') {
+    await loadMyEvents();
+}
 }
 
                 closePhotoUpload();
