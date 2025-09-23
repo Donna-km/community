@@ -1922,6 +1922,15 @@ async function redirectToPaymentGateway(eventId, price, image_url) {
                             </div>
                             <div class="text-xs text-gray-500">${photo.challenge_name || 'Gallery Upload'}</div>
                             <div class="text-xs text-gray-400 mt-1">${uploadDate.toLocaleDateString()}</div>
+                            <div class="flex items-center space-x-2 mt-2">
+  <button onclick="toggleStar(${photo.id})" 
+          class="text-yellow-500 hover:scale-110 transition"
+          title="Give a star">
+    ⭐
+  </button>
+  <span id="starCount_${photo.id}" class="text-sm text-gray-600">${photo.star_count || 0}</span>
+</div>
+
                         </div>
                     `;
                     
@@ -2770,6 +2779,52 @@ const html = `
 function closeEventDetail() {
   document.getElementById("eventDetailModal").classList.add("hidden");
 }
+
+    function closeEventDetail() {
+    document.getElementById("eventDetailModal").classList.add("hidden");
+}
+
+// ⭐ เพิ่มตรงนี้ ก่อนปิด </script>
+async function toggleStar(photoId) {
+    if (!currentUser) {
+        showToast("Please login to give stars ⭐");
+        return;
+    }
+
+    // 🔍 เช็คว่ากดไปแล้วหรือยัง
+    const { data: existing, error } = await supabase
+        .from('photo_stars')
+        .select('id')
+        .eq('user_id', currentUser.id)
+        .eq('photo_id', photoId)
+        .single();
+
+    if (error && error.code !== 'PGRST116') {
+        debugLog(`❌ toggleStar error: ${error.message}`, 'error');
+        return;
+    }
+
+    if (existing) {
+        // ❌ ลบดาว
+        await supabase.from('photo_stars')
+            .delete()
+            .eq('id', existing.id);
+    } else {
+        // ⭐ เพิ่มดาว
+        await supabase.from('photo_stars')
+            .insert([{ user_id: currentUser.id, photo_id: photoId }]);
+    }
+
+    // 🔄 โหลด count ใหม่
+    const { count } = await supabase
+        .from('photo_stars')
+        .select('*', { count: 'exact', head: true })
+        .eq('photo_id', photoId);
+
+    document.getElementById(`starCount_${photoId}`).innerText = count || 0;
+}
+</script>
+
 </script>
 
 
