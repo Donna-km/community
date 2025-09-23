@@ -2784,7 +2784,8 @@ function closeEventDetail() {
     document.getElementById("eventDetailModal").classList.add("hidden");
 }
 
-// ⭐ เพิ่มตรงนี้ ก่อนปิด </script>
+<!-- ⭐ ใส่ฟังก์ชันตรงนี้ ก่อนปิด </script> สุดท้าย -->
+<script>
 async function toggleStar(photoId) {
     if (!currentUser) {
         showToast("Please login to give stars ⭐");
@@ -2825,10 +2826,6 @@ async function toggleStar(photoId) {
 }
 </script>
 
-</script>
-
-
-</script>
-
 </body>
 </html>
+
