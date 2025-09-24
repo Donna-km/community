@@ -1342,12 +1342,6 @@ const totalMissions = event.total_missions || 1;
 let completedMissions = event.user_events?.missions_completed || 0;
 
 
-    // ถ้ายังไม่เคย submit เลย ให้ progress เริ่มที่ 0
-    let completedMissions = event.user_events?.missions_completed || 0;
-    if (isDoneToday && completedMissions < totalMissions) {
-        completedMissions++;
-    }
-
     const progressText = now >= eventDate && now <= endDate
         ? `🔥 Mission ${completedMissions} of ${totalMissions}`
         : "";
