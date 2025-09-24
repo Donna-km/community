@@ -1335,29 +1335,31 @@
         countdownText = '🔴 Event Ended';
     }
 
-    // ✅ Progress bar logic (เปลี่ยนจากนับวัน → นับ mission)
-    const totalMissions = event.total_missions || 1;
+   // ✅ Progress bar logic (เปลี่ยนจากนับวัน → นับ mission)
+const totalMissions = event.total_missions || 1;
 
-    const todayStr = new Date().toISOString().split('T')[0];
-    const lastDoneStr = event.user_events?.last_completed_date
-        ? event.user_events.last_completed_date.split('T')[0]
-        : null;
-    const isDoneToday = (lastDoneStr === todayStr);
+const todayStr = new Date().toISOString().split('T')[0];
+const lastDoneStr = event.user_events?.last_completed_date
+    ? event.user_events.last_completed_date.split('T')[0]
+    : null;
+const isDoneToday = (lastDoneStr === todayStr);
 
-    // ถ้ายังไม่เคย submit เลย ให้ progress เริ่มที่ 0
-    let completedMissions = event.user_events?.missions_completed || 0;
-    if (isDoneToday && completedMissions < totalMissions) {
-        completedMissions++;
-    }
+// ✅ ใช้ missions_completed จาก DB โดยตรง
+let completedMissions = event.user_events?.missions_completed || 0;
+// ❌ ไม่ต้อง ++ เพิ่มเอง เพราะ DB เก็บสะสมอยู่แล้ว
+// if (isDoneToday && completedMissions < totalMissions) {
+//     completedMissions++;
+// }
 
-    const progressText = now >= eventDate && now <= endDate
-        ? `🔥 Mission ${completedMissions} of ${totalMissions}`
-        : "";
+const progressText = now >= eventDate && now <= endDate
+    ? `🔥 Mission ${completedMissions} of ${totalMissions}`
+    : "";
 
-    const progressBar = now >= eventDate && now <= endDate ? `
-        <div class="w-full bg-gray-200 rounded-full h-2 mb-4">
-            <div class="bg-green-500 h-2 rounded-full" style="width:${(completedMissions / totalMissions) * 100}%"></div>
-        </div>` : "";
+const progressBar = now >= eventDate && now <= endDate ? `
+    <div class="w-full bg-gray-200 rounded-full h-2 mb-4">
+        <div class="bg-green-500 h-2 rounded-full" style="width:${(completedMissions / totalMissions) * 100}%"></div>
+    </div>` : "";
+
 
     // ✅ Render card
     div.innerHTML = `
