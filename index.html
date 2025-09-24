@@ -1336,13 +1336,11 @@
     }
 
     // ✅ Progress bar logic (เปลี่ยนจากนับวัน → นับ mission)
-    const totalMissions = event.total_missions || 1;
+const totalMissions = event.total_missions || 1;
 
-    const todayStr = new Date().toISOString().split('T')[0];
-    const lastDoneStr = event.user_events?.last_completed_date
-        ? event.user_events.last_completed_date.split('T')[0]
-        : null;
-    const isDoneToday = (lastDoneStr === todayStr);
+// ⬇️ ใช้ missions_completed ตรงจาก DB แทน ไม่ต้องรีเซ็ตทุกวัน
+let completedMissions = event.user_events?.missions_completed || 0;
+
 
     // ถ้ายังไม่เคย submit เลย ให้ progress เริ่มที่ 0
     let completedMissions = event.user_events?.missions_completed || 0;
