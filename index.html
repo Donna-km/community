@@ -754,7 +754,8 @@
                     // Get or create user
                     currentUser = await getOrCreateUser(profile);
                     debugLog(`✅ User loaded: ${currentUser.name} (ID: ${currentUser.id})`);
-                    
+
+                   
                 } catch (liffError) {
                     debugLog(`⚠️ LIFF failed: ${liffError.message}`, 'warn');
                     debugLog('🎭 Using demo mode for testing');
@@ -2832,6 +2833,28 @@ async function toggleStar(photoId) {
         .eq('photo_id', photoId);
 
     document.getElementById(`starCount_${photoId}`).innerText = count || 0;
+}
+async function getOrCreateUser(profile) {
+  const { data, error } = await supabase
+    .from('users')
+    .upsert(
+      {
+        line_user_id: profile.userId,
+        name: profile.displayName,
+        user_picture: profile.pictureUrl,
+        updated_at: new Date().toISOString()
+      },
+      { onConflict: 'line_user_id' }
+    )
+    .select()
+    .single();
+
+  if (error) {
+    debugLog(`❌ Error in getOrCreateUser: ${error.message}`, 'error');
+    throw error;
+  }
+
+  return data;
 }
 
 </script>
