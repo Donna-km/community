@@ -1345,10 +1345,7 @@
     const isDoneToday = (lastDoneStr === todayStr);
 
     // ถ้ายังไม่เคย submit เลย ให้ progress เริ่มที่ 0
-    let completedMissions = event.user_events?.missions_completed || 0;
-    if (isDoneToday && completedMissions < totalMissions) {
-        completedMissions++;
-    }
+    let completedMissions = event.user_events?.missions_completed || 0; // อ่านตรงจาก DB
 
     const progressText = now >= eventDate && now <= endDate
         ? `🔥 Mission ${completedMissions} of ${totalMissions}`
