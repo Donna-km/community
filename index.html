@@ -1412,23 +1412,46 @@ function markEventDone(eventId) {
 
 
         // Event functions
-        async function loadEvents() {
-            try {
-                debugLog('🎉 Loading events...');
-                
-                const { data: events, error } = await supabase
-                    .from('events')
-                    .select('*')
-                    .eq('is_active', true)
-                    .order('start_date', { ascending: true });
+async function loadEvents() {
+    try {
+        debugLog('🎉 Loading events...');
+        
+        const { data: events, error } = await supabase
+            .from('events')
+            .select(`
+                *,
+                user_events!inner (
+                    user_id,
+                    event_id,
+                    missions_completed,
+                    last_completed_date,
+                    completed
+                )
+            `)
+            .eq('is_active', true)
+            .eq('user_events.user_id', currentUser.id)  // ⬅️ ดึงเฉพาะ progress ของ user ที่ล็อกอิน
+            .order('start_date', { ascending: true });
 
-                if (error) throw error;
+        if (error) throw error;
 
-                debugLog(`✅ Loaded ${events?.length || 0} events`);
+        // Normalize: user_events เป็น array → เอา element แรกมาใช้
+        const normalizedEvents = events.map(e => ({
+            ...e,
+            user_events: e.user_events?.[0] || null
+        }));
 
-                const grid = document.getElementById('eventGrid');
-                grid.innerHTML = '';
+        debugLog(`✅ Loaded ${normalizedEvents?.length || 0} events`);
 
+        const grid = document.getElementById('eventGrid');
+        grid.innerHTML = '';
+
+        normalizedEvents.forEach(ev => {
+            grid.appendChild(createEventCard(ev));
+        });
+    } catch (error) {
+        debugLog(`❌ Error loading events: ${error.message}`, 'error');
+    }
+}
                 // Filter out events user has already joined
                 let joinedEventIds = [];
                 if (currentUser) {
