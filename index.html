@@ -266,16 +266,7 @@
                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                    placeholder="50" value="10" min="1">
         </div>
-
-        <!-- ⬇⬇⬇ ✅ เพิ่มปุ่ม Create -->
-        <div>
-            <button type="submit" 
-                    class="w-full bg-red-600 text-white py-3 rounded-lg font-medium hover:bg-red-700">
-                Create
-            </button>
-        </div>
-        <!-- ⬆⬆⬆ -->
-    </div>
+      </div>
 </form>
 
 
@@ -2492,7 +2483,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                 duration: parseInt(document.getElementById('challengeDuration').value),
                                 description: document.getElementById('challengeDescription').value,
                                 type: document.getElementById('challengeType').value,
-                                completion_points: parseInt(document.getElementById('challengePoints').value) || 10, // ⬅️ เพิ่มตรงนี้
+                                const pointsInput = document.getElementById('challengePoints');
+const completionPoints = pointsInput ? parseInt(pointsInput.value) || 10 : 10;
+
+completion_points: completionPoints,
+
                                 created_by: currentUser.id
                             }
                         ]);
