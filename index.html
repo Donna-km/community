@@ -1346,18 +1346,24 @@ async function getOrCreateUser(profile) {
         countdownText = '🔴 Event Ended';
     }
 
-    // ✅ Progress bar logic (นับจาก DB จริง ๆ)
-const totalMissions = event.total_missions || 1;
+    // ✅ Progress bar logic (นับจาก DB จริง ๆ + optimistic update)
+    const totalMissions = event.total_missions || 1;
 
-// ใช้ค่าที่ DB เก็บไว้ตรง ๆ
-let completedMissions = event.user_events?.missions_completed || 0;
+    // ใช้ค่าที่ DB เก็บไว้ตรง ๆ
+    let completedMissions = event.user_events?.missions_completed || 0;
 
-// ✅ เช็คว่า user ทำภารกิจวันนี้หรือยัง (เพื่อ disable ปุ่ม)
-const todayStr = new Date().toISOString().split('T')[0];
-const lastDoneStr = event.user_events?.last_completed_date
-    ? event.user_events.last_completed_date.split('T')[0]
-    : null;
-const isDoneToday = (lastDoneStr === todayStr);
+    // ✅ เช็คว่า user ทำภารกิจวันนี้หรือยัง (เพื่อ disable ปุ่ม)
+    const todayStr = new Date().toISOString().split('T')[0];
+    const lastDoneStr = event.user_events?.last_completed_date
+        ? event.user_events.last_completed_date.split('T')[0]
+        : null;
+    const isDoneToday = (lastDoneStr === todayStr);
+
+    // ⬇⬇⬇ เพิ่ม: ถ้าวันนี้ submit แล้ว → บวก 1 ให้ UI เห็นทันที
+    if (isDoneToday && completedMissions < totalMissions) {
+        completedMissions++;
+    }
+    // ⬆⬆⬆
 
     const progressText = now >= eventDate && now <= endDate
         ? `🔥 Mission ${completedMissions} of ${totalMissions}`
@@ -1406,6 +1412,7 @@ const isDoneToday = (lastDoneStr === todayStr);
 
     return div;
 }
+
 
         function markDone(challengeId) {
             currentChallengeId = challengeId;
