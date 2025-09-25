@@ -1208,17 +1208,19 @@ async function getOrCreateUser(profile) {
                 eventGrid.innerHTML = '';
 
                 userEvents?.forEach(userEvent => {
-    if (userEvent.events) {
-        const eventCard = createMyEventCard({
-            ...userEvent.events,
-            user_events: {
-                completed: userEvent.completed,
-                last_completed_date: userEvent.last_completed_date
-            }
-        });
-        eventGrid.appendChild(eventCard);
-    }
+  if (userEvent.events) {
+    const eventCard = createMyEventCard({
+      ...userEvent.events,
+      user_events: {
+        completed: userEvent.completed,
+        last_completed_date: userEvent.last_completed_date,
+        missions_completed: userEvent.missions_completed || 0   // ⬅️ เพิ่มบรรทัดนี้
+      }
+    });
+    eventGrid.appendChild(eventCard);
+  }
 });
+
 
 
                 debugLog(`✅ Loaded ${userChallenges?.length || 0} user challenges and ${userEvents?.length || 0} user events`);
