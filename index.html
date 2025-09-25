@@ -825,57 +825,68 @@
         }
 
         // Get or create user from LINE profile
-        async function getOrCreateUser(profile) {
-            try {
-                debugLog(`🔍 Looking for user: ${profile.userId}`);
-                
-                // Check if user exists
-                const { data: existingUser, error: fetchError } = await supabase
+async function getOrCreateUser(profile) {
+    try {
+        debugLog(`🔍 Looking for user: ${profile.userId}`);
+        
+        // Check if user exists
+        const { data: existingUser, error: fetchError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('line_user_id', profile.userId)
+            .single();
+
+        if (existingUser) {
+            // 🖼️ ถ้า LINE profile picture เปลี่ยน → update ใน DB
+            if (profile.pictureUrl && existingUser.user_picture !== profile.pictureUrl) {
+                await supabase
                     .from('users')
-                    .select('*')
-                    .eq('line_user_id', profile.userId)
-                    .single();
+                    .update({ user_picture: profile.pictureUrl })
+                    .eq('id', existingUser.id);
 
-                if (existingUser) {
-                    debugLog(`✅ Found existing user: ${existingUser.name}`);
-                    return existingUser;
-                }
-
-                if (fetchError && fetchError.code !== 'PGRST116') {
-                    debugLog(`❌ Error fetching user: ${fetchError.message}`, 'error');
-                    throw fetchError;
-                }
-
-                debugLog('👤 Creating new user...');
-                
-                // Create new user
-                const { data: newUser, error: createError } = await supabase
-                    .from('users')
-                    .insert([
-                        {
-                            line_user_id: profile.userId,
-                            name: profile.displayName,
-                            user_picture: profile.pictureUrl,
-                            points: 0,
-                            is_admin: false
-                        }
-                    ])
-                    .select()
-                    .single();
-
-                if (createError) {
-                    debugLog(`❌ Error creating user: ${createError.message}`, 'error');
-                    throw createError;
-                }
-                
-                debugLog(`✅ Created new user: ${newUser.name}`);
-                return newUser;
-
-            } catch (error) {
-                debugLog(`💥 Error managing user: ${error.message}`, 'error');
-                throw error;
+                existingUser.user_picture = profile.pictureUrl; // sync frontend
+                debugLog("🖼️ Profile picture updated");
             }
+
+            debugLog(`✅ Found existing user: ${existingUser.name}`);
+            return existingUser;
         }
+
+        if (fetchError && fetchError.code !== 'PGRST116') {
+            debugLog(`❌ Error fetching user: ${fetchError.message}`, 'error');
+            throw fetchError;
+        }
+
+        debugLog('👤 Creating new user...');
+        
+        // Create new user
+        const { data: newUser, error: createError } = await supabase
+            .from('users')
+            .insert([
+                {
+                    line_user_id: profile.userId,
+                    name: profile.displayName,
+                    user_picture: profile.pictureUrl,
+                    points: 0,
+                    is_admin: false
+                }
+            ])
+            .select()
+            .single();
+
+        if (createError) {
+            debugLog(`❌ Error creating user: ${createError.message}`, 'error');
+            throw createError;
+        }
+        
+        debugLog(`✅ Created new user: ${newUser.name}`);
+        return newUser;
+
+    } catch (error) {
+        debugLog(`💥 Error managing user: ${error.message}`, 'error');
+        throw error;
+    }
+}
 
         // Navigation functions
         function showSection(sectionName) {
