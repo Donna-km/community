@@ -2472,29 +2472,29 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             
             try {
-                if (!document.getElementById('challengeForm').classList.contains('hidden')) {
-                    // Create challenge
-                    const { error } = await supabase
-                        .from('challenges')
-                        .insert([
-                            {
-                                name: document.getElementById('challengeName').value,
-                                emoji: document.getElementById('challengeEmoji').value,
-                                duration: parseInt(document.getElementById('challengeDuration').value),
-                                description: document.getElementById('challengeDescription').value,
-                                type: document.getElementById('challengeType').value,
-                                const pointsInput = document.getElementById('challengePoints');
-const completionPoints = pointsInput ? parseInt(pointsInput.value) || 10 : 10;
+            if (!document.getElementById('challengeForm').classList.contains('hidden')) {
+    // ✅ ดึงค่าจาก input ก่อน
+    const pointsInput = document.getElementById('challengePoints');
+    const completionPoints = pointsInput ? parseInt(pointsInput.value) || 10 : 10;
 
-completion_points: completionPoints,
+    // Create challenge
+    const { error } = await supabase
+        .from('challenges')
+        .insert([
+            {
+                name: document.getElementById('challengeName').value,
+                emoji: document.getElementById('challengeEmoji').value,
+                duration: parseInt(document.getElementById('challengeDuration').value),
+                description: document.getElementById('challengeDescription').value,
+                type: document.getElementById('challengeType').value,
+                completion_points: completionPoints,   // ✅ ใช้ตัวแปร
+                created_by: currentUser.id
+            }
+        ]);
 
-                                created_by: currentUser.id
-                            }
-                        ]);
-
-                    if (error) throw error;
-                    await loadChallenges();
-                    showToast('Challenge created successfully!');
+    if (error) throw error;
+    await loadChallenges();
+    showToast('Challenge created successfully!');
                 } else {
                     // Create event with photo upload
                     const eventImages = document.getElementById('eventImages').files;
