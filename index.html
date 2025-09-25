@@ -1346,20 +1346,18 @@ async function getOrCreateUser(profile) {
         countdownText = '🔴 Event Ended';
     }
 
-    // ✅ Progress bar logic (เปลี่ยนจากนับวัน → นับ mission)
-    const totalMissions = event.total_missions || 1;
+    // ✅ Progress bar logic (นับจาก DB จริง ๆ)
+const totalMissions = event.total_missions || 1;
 
-    const todayStr = new Date().toISOString().split('T')[0];
-    const lastDoneStr = event.user_events?.last_completed_date
-        ? event.user_events.last_completed_date.split('T')[0]
-        : null;
-    const isDoneToday = (lastDoneStr === todayStr);
+// ใช้ค่าที่ DB เก็บไว้ตรง ๆ
+let completedMissions = event.user_events?.missions_completed || 0;
 
-    // ถ้ายังไม่เคย submit เลย ให้ progress เริ่มที่ 0
-    let completedMissions = event.user_events?.missions_completed || 0;
-    if (isDoneToday && completedMissions < totalMissions) {
-        completedMissions++;
-    }
+// ✅ เช็คว่า user ทำภารกิจวันนี้หรือยัง (เพื่อ disable ปุ่ม)
+const todayStr = new Date().toISOString().split('T')[0];
+const lastDoneStr = event.user_events?.last_completed_date
+    ? event.user_events.last_completed_date.split('T')[0]
+    : null;
+const isDoneToday = (lastDoneStr === todayStr);
 
     const progressText = now >= eventDate && now <= endDate
         ? `🔥 Mission ${completedMissions} of ${totalMissions}`
