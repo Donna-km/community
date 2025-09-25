@@ -235,38 +235,52 @@
                     
                   <form id="adminForm" class="space-y-4">
     <!-- Challenge Form -->
-    <div id="challengeForm" class="space-y-4">
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Challenge Name</label>
-            <input type="text" id="challengeName" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" placeholder="30-Day Water Challenge">
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Emoji</label>
-            <input type="text" id="challengeEmoji" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" placeholder="💧">
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Duration (days)</label>
-            <input type="number" id="challengeDuration" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" placeholder="30">
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <textarea id="challengeDescription" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" rows="3" placeholder="Drink 8 glasses of water daily"></textarea>
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
-            <select id="challengeType" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
-                <option value="free">Free</option>
-                <option value="premium">Premium</option>
-            </select>
-        </div>
-        <!-- ✅ เพิ่ม Completion Points -->
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Completion Points</label>
-            <input type="number" id="challengePoints"
-                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                   placeholder="50" value="10" min="1">
-        </div>
-      </div>
+<div id="challengeForm" class="space-y-4">
+  <div>
+    <label class="block text-sm font-medium text-gray-700 mb-1">Challenge Name</label>
+    <input type="text" id="challengeName" name="challengeName"
+           class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+           placeholder="30-Day Water Challenge">
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium text-gray-700 mb-1">Emoji</label>
+    <input type="text" id="challengeEmoji" name="challengeEmoji"
+           class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+           placeholder="💧">
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium text-gray-700 mb-1">Duration (days)</label>
+    <input type="number" id="challengeDuration" name="challengeDuration"
+           class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+           placeholder="30">
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+    <textarea id="challengeDescription" name="challengeDescription"
+              class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              rows="3" placeholder="Drink 8 glasses of water daily"></textarea>
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+    <select id="challengeType" name="challengeType"
+            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+      <option value="free">Free</option>
+      <option value="premium">Premium</option>
+    </select>
+  </div>
+
+  <!-- ✅ Completion Points -->
+  <div>
+    <label class="block text-sm font-medium text-gray-700 mb-1">Completion Points</label>
+    <input type="number" id="challengePoints" name="challengePoints"
+           class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+           placeholder="50" value="10" min="1">
+  </div>
+</div>
 
                         <!-- Event Form -->
                         <div id="eventForm" class="space-y-4 hidden">
