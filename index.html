@@ -1361,12 +1361,6 @@ async function getOrCreateUser(profile) {
         : null;
     const isDoneToday = (lastDoneStr === todayStr);
 
-    // ⬇⬇⬇ เพิ่ม: ถ้าวันนี้ submit แล้ว → บวก 1 ให้ UI เห็นทันที
-    if (isDoneToday && completedMissions < totalMissions) {
-        completedMissions++;
-    }
-    // ⬆⬆⬆
-
     const progressText = now >= eventDate && now <= endDate
         ? `🔥 Mission ${completedMissions} of ${totalMissions}`
         : "";
