@@ -1063,9 +1063,6 @@ async function getOrCreateUser(profile) {
                     .eq('id', challengeId)
                     .single();
 
-                const points = challenge?.type === 'premium' ? 10 : 5;
-                await updateUserPoints(points);
-
                 debugLog(`✅ Joined challenge: ${challenge?.name}`);
                 showToast(`Joined ${challenge?.name}! +${points} points`);
                 
