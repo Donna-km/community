@@ -2464,115 +2464,114 @@ if (currentSection === 'myEvents') {
         }
 
         // Handle admin form submission
-        document.addEventListener('DOMContentLoaded', function() {
-            const adminForm = document.getElementById('adminForm');
-            if (adminForm) {
-                adminForm.addEventListener('submit', async function(e) {
-                    e.preventDefault();
-                    
-                    try {
-    if (!document.getElementById('challengeForm').classList.contains('hidden')) {
-        // Create challenge
-        const { error } = await supabase
-            .from('challenges')
-            .insert([
-                {
-                    name: document.getElementById('challengeName').value,
-                    emoji: document.getElementById('challengeEmoji').value,
-                    duration: parseInt(document.getElementById('challengeDuration').value),
-                    description: document.getElementById('challengeDescription').value,
-                    type: document.getElementById('challengeType').value,
-                    completion_points: parseInt(document.getElementById('challengePoints').value) || 10, // ⬅️ เพิ่มตรงนี้
-                    created_by: currentUser.id
-                }
-            ]);
-
-        if (error) throw error;
-        await loadChallenges();
-        showToast('Challenge created successfully!');
-    } else {
-                            // Create event with photo upload
-const eventImages = document.getElementById('eventImages').files;
-let imageUrls = [];
-
-// Upload event images if any
-if (eventImages && eventImages.length > 0) {
-    debugLog(`📸 Uploading ${eventImages.length} event images...`);
-    
-    for (let i = 0; i < Math.min(eventImages.length, 5); i++) {
-        const file = eventImages[i];
-        const timestamp = Date.now();
-        const randomId = Math.random().toString(36).substring(2);
-        const fileExt = file.name.split('.').pop();
-        const fileName = `event_${timestamp}_${randomId}.${fileExt}`;
-        
-        try {
-            const { data: uploadData, error: uploadError } = await supabase.storage
-                .from('ecal-photos')
-                .upload(fileName, file, {
-                    cacheControl: '3600',
-                    upsert: false
-                });
-
-            if (uploadError) {
-                debugLog(`❌ Error uploading image ${i + 1}: ${uploadError.message}`, 'error');
-                continue;
-            }
-
-            const { data: urlData } = supabase.storage
-                .from('ecal-photos')
-                .getPublicUrl(fileName);
-
-            imageUrls.push(urlData.publicUrl);
-            debugLog(`✅ Uploaded image ${i + 1}: ${fileName}`);
+document.addEventListener('DOMContentLoaded', function() {
+    const adminForm = document.getElementById('adminForm');
+    if (adminForm) {
+        adminForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
             
-        } catch (imgError) {
-            debugLog(`💥 Error processing image ${i + 1}: ${imgError.message}`, 'error');
-        }
+            try {
+                if (!document.getElementById('challengeForm').classList.contains('hidden')) {
+                    // Create challenge
+                    const { error } = await supabase
+                        .from('challenges')
+                        .insert([
+                            {
+                                name: document.getElementById('challengeName').value,
+                                emoji: document.getElementById('challengeEmoji').value,
+                                duration: parseInt(document.getElementById('challengeDuration').value),
+                                description: document.getElementById('challengeDescription').value,
+                                type: document.getElementById('challengeType').value,
+                                completion_points: parseInt(document.getElementById('challengePoints').value) || 10, // ⬅️ เพิ่มตรงนี้
+                                created_by: currentUser.id
+                            }
+                        ]);
+
+                    if (error) throw error;
+                    await loadChallenges();
+                    showToast('Challenge created successfully!');
+                } else {
+                    // Create event with photo upload
+                    const eventImages = document.getElementById('eventImages').files;
+                    let imageUrls = [];
+
+                    // Upload event images if any
+                    if (eventImages && eventImages.length > 0) {
+                        debugLog(`📸 Uploading ${eventImages.length} event images...`);
+                        
+                        for (let i = 0; i < Math.min(eventImages.length, 5); i++) {
+                            const file = eventImages[i];
+                            const timestamp = Date.now();
+                            const randomId = Math.random().toString(36).substring(2);
+                            const fileExt = file.name.split('.').pop();
+                            const fileName = `event_${timestamp}_${randomId}.${fileExt}`;
+                            
+                            try {
+                                const { data: uploadData, error: uploadError } = await supabase.storage
+                                    .from('ecal-photos')
+                                    .upload(fileName, file, {
+                                        cacheControl: '3600',
+                                        upsert: false
+                                    });
+
+                                if (uploadError) {
+                                    debugLog(`❌ Error uploading image ${i + 1}: ${uploadError.message}`, 'error');
+                                    continue;
+                                }
+
+                                const { data: urlData } = supabase.storage
+                                    .from('ecal-photos')
+                                    .getPublicUrl(fileName);
+
+                                imageUrls.push(urlData.publicUrl);
+                                debugLog(`✅ Uploaded image ${i + 1}: ${fileName}`);
+                                
+                            } catch (imgError) {
+                                debugLog(`💥 Error processing image ${i + 1}: ${imgError.message}`, 'error');
+                            }
+                        }
+                    }
+
+                    // Create event
+                    const { error } = await supabase
+                        .from('events')
+                        .insert([
+                            {
+                                name: document.getElementById('eventName').value,
+                                emoji: document.getElementById('eventEmoji').value,
+                                start_date: document.getElementById('eventStartDate').value,
+                                end_date: document.getElementById('eventEndDate').value,
+                                location: document.getElementById('eventLocation').value,
+                                details: document.getElementById('eventDetails').value,
+                                completion_points: parseInt(document.getElementById('eventPoints').value),
+                                image_urls: imageUrls.length > 0 ? imageUrls : null,
+                                created_by: currentUser.id,
+                                price: parseFloat(document.getElementById('eventPrice').value),
+
+                                // ⬇⬇⬇ เพิ่มตรงนี้
+                                register_start: document.getElementById('eventRegisterStart').value,   // ⬅ วันที่เปิดลงทะเบียน
+                                register_end: document.getElementById('eventRegisterEnd').value,       // ⬅ วันที่ปิดลงทะเบียน
+                                total_missions: parseInt(document.getElementById('eventMissions').value), // ⬅ จำนวน mission
+                                event_type: document.getElementById('eventType').value                 // ⬅ Virtual / On the Ground
+                                // ⬆⬆⬆
+                            }
+                        ]);
+
+                    if (error) throw error;
+                    await loadEvents();
+                    showToast(`Event created successfully! ${imageUrls.length > 0 ? `(${imageUrls.length} photos uploaded)` : ''}`);
+                }
+
+                closeAdminPanel();
+
+            } catch (error) {
+                console.error("💥 Error creating item:", error.message);
+                showToast(`Error: ${error.message}`);
+            }
+        }); // ปิด addEventListener
     }
-}
-
-// Create event
-const { error } = await supabase
-    .from('events')
-    .insert([
-        {
-            name: document.getElementById('eventName').value,
-            emoji: document.getElementById('eventEmoji').value,
-            start_date: document.getElementById('eventStartDate').value,
-            end_date: document.getElementById('eventEndDate').value,
-            location: document.getElementById('eventLocation').value,
-            details: document.getElementById('eventDetails').value,
-            completion_points: parseInt(document.getElementById('eventPoints').value),
-            image_urls: imageUrls.length > 0 ? imageUrls : null,
-            created_by: currentUser.id,
-            price: parseFloat(document.getElementById('eventPrice').value),
-
-            // ⬇⬇⬇ เพิ่มตรงนี้
-            register_start: document.getElementById('eventRegisterStart').value,   // ⬅ วันที่เปิดลงทะเบียน
-            register_end: document.getElementById('eventRegisterEnd').value,       // ⬅ วันที่ปิดลงทะเบียน
-            total_missions: parseInt(document.getElementById('eventMissions').value), // ⬅ จำนวน mission
-            event_type: document.getElementById('eventType').value                 // ⬅ Virtual / On the Ground
-            // ⬆⬆⬆
-        }
-    ]);
-
-if (error) throw error;
-await loadEvents();
-showToast(`Event created successfully! ${imageUrls.length > 0 ? `(${imageUrls.length} photos uploaded)` : ''}`);
-}
-
-closeAdminPanel();
-
-} catch (error) {
-    debugLog(`💥 Error creating item: ${error.message}`, 'error');
-    showToast('Error creating item');
-}
-});
-}
-});
-
-        
+}); // ปิด DOMContentLoaded
+       
 
         // Utility functions
         function showToast(message) {
