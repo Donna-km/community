@@ -212,31 +212,39 @@
   </div>
 </div>
 
-    <!-- Bottom Navigation -->
-    <nav class="bottom-nav">
-        <div class="flex justify-around py-2">
-            <button class="nav-item active flex flex-col items-center p-2" onclick="showSection('challengeBoard')">
-                <span class="text-xl">🏆</span>
-                <span class="text-xs mt-1">Challenges</span>
-            </button>
-            <button class="nav-item flex flex-col items-center p-2" onclick="showSection('myChallenges')">
-                <span class="text-xl">💪</span>
-                <span class="text-xs mt-1">My Progress</span>
-            </button>
-            <button class="nav-item flex flex-col items-center p-2" onclick="showSection('events')">
-                <span class="text-xl">🎉</span>
-                <span class="text-xs mt-1">Events</span>
-            </button>
-            <button class="nav-item flex flex-col items-center p-2" onclick="showSection('leaderboard')">
-                <span class="text-xl">👑</span>
-                <span class="text-xs mt-1">Leaderboard</span>
-            </button>
-            <button class="nav-item flex flex-col items-center p-2" onclick="showSection('gallery')">
-                <span class="text-xl">📸</span>
-                <span class="text-xs mt-1">Gallery</span>
-            </button>
-        </div>
-    </nav>
+   <!-- Bottom Navigation -->
+<nav class="bottom-nav">
+    <div class="flex justify-around py-2">
+        <button class="nav-item active flex flex-col items-center p-2" onclick="showSection('challengeBoard')">
+            <span class="text-xl">🏆</span>
+            <span class="text-xs mt-1">Challenges</span>
+        </button>
+        <button class="nav-item flex flex-col items-center p-2" onclick="showSection('myChallenges')">
+            <span class="text-xl">💪</span>
+            <span class="text-xs mt-1">My Progress</span>
+        </button>
+        <button class="nav-item flex flex-col items-center p-2" onclick="showSection('events')">
+            <span class="text-xl">🎉</span>
+            <span class="text-xs mt-1">Events</span>
+        </button>
+        <button class="nav-item flex flex-col items-center p-2" onclick="showSection('leaderboard')">
+            <span class="text-xl">👑</span>
+            <span class="text-xs mt-1">Leaderboard</span>
+        </button>
+
+        <!-- ✅ เพิ่ม Hall of Fame -->
+        <button class="nav-item flex flex-col items-center p-2" onclick="openHallOfFame()">
+            <span class="text-xl">🥇</span>
+            <span class="text-xs mt-1">Hall</span>
+        </button>
+
+        <button class="nav-item flex flex-col items-center p-2" onclick="showSection('gallery')">
+            <span class="text-xl">📸</span>
+            <span class="text-xs mt-1">Gallery</span>
+        </button>
+    </div>
+</nav>
+
 
     <!-- Admin Panel Modal -->
     <div id="adminModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
