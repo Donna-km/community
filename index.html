@@ -124,17 +124,32 @@
         </section>
 
         <!-- My Challenges Section -->
-        <section id="myChallenges" class="space-y-4 hidden">
-            <h2 class="text-xl font-bold text-gray-800">💪 My Challenges</h2>
-            <div id="myChallengeGrid" class="space-y-4">
-                <!-- My challenge cards will be populated here -->
-            </div>
-            
-            <h2 class="text-xl font-bold text-gray-800 mt-8">🎉 My Events</h2>
-            <div id="myEventGrid" class="space-y-4">
-                <!-- My event cards will be populated here -->
-            </div>
-        </section>
+<section id="myChallenges" class="space-y-4 hidden">
+  <div class="flex border-b mb-4">
+    <button id="tabOngoing" onclick="showProgressTab('ongoing')" 
+            class="flex-1 py-2 text-center font-medium border-b-2 border-red-500 text-red-600">
+      ⏳ Ongoing
+    </button>
+    <button id="tabCompleted" onclick="showProgressTab('completed')" 
+            class="flex-1 py-2 text-center font-medium text-gray-500">
+      🏆 Hall of Fame
+    </button>
+  </div>
+
+  <!-- Ongoing (เดิม) -->
+  <div id="progressOngoing" class="space-y-4">
+    <h2 class="text-xl font-bold text-gray-800">💪 My Challenges</h2>
+    <div id="myChallengeGrid" class="space-y-4"></div>
+    <h2 class="text-xl font-bold text-gray-800 mt-8">🎉 My Events</h2>
+    <div id="myEventGrid" class="space-y-4"></div>
+  </div>
+
+  <!-- Completed (ใหม่) -->
+  <div id="progressCompleted" class="masonry hidden">
+    <!-- Completed challenge/event cards จะ populate ที่นี่ -->
+  </div>
+</section>
+
 
         <!-- Events Section -->
         <section id="events" class="space-y-4 hidden">
@@ -1797,8 +1812,6 @@ async function redirectToPaymentGateway(eventId, price, image_url) {
   }
 }
 
-
-
         function showEventDetail(eventId) {
             debugLog(`👁️ Show event detail for: ${eventId}`);
         }
@@ -2900,6 +2913,26 @@ async function toggleStar(photoId) {
         .eq('photo_id', photoId);
 
     document.getElementById(`starCount_${photoId}`).innerText = count || 0;
+}
+function showProgressTab(tab) {
+  const ongoing = document.getElementById('progressOngoing');
+  const completed = document.getElementById('progressCompleted');
+  const tabOngoing = document.getElementById('tabOngoing');
+  const tabCompleted = document.getElementById('tabCompleted');
+
+  if (tab === 'ongoing') {
+    ongoing.classList.remove('hidden');
+    completed.classList.add('hidden');
+    tabOngoing.classList.add('border-red-500', 'text-red-600');
+    tabCompleted.classList.remove('border-red-500', 'text-red-600');
+    tabCompleted.classList.add('text-gray-500');
+  } else {
+    ongoing.classList.add('hidden');
+    completed.classList.remove('hidden');
+    tabCompleted.classList.add('border-red-500', 'text-red-600');
+    tabOngoing.classList.remove('border-red-500', 'text-red-600');
+    tabOngoing.classList.add('text-gray-500');
+  }
 }
 
 </script>
