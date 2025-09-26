@@ -1120,8 +1120,10 @@ async function getOrCreateUser(profile) {
             return;
         }
         
-        // Load user challenges with better error handling for admin users
-        const { data: userChallenges, error: challengeError } = await supabase
+        // -------------------------
+        // Load user challenges
+        // -------------------------
+        let { data: userChallenges, error: challengeError } = await supabase
             .from('user_challenges')
             .select(`
                 *,
@@ -1190,7 +1192,83 @@ async function getOrCreateUser(profile) {
             }
         });
 
-        // 🔻 (ส่วนของ userEvents ยังไม่ได้แก้ใน snippet นี้ แต่ต้องทำ logic แบบเดียวกันแยก ongoing/completed)
+        // -------------------------
+        // Load user events
+        // -------------------------
+        let userEvents = [];
+        const { data: directUserEvents, error: eventError } = await supabase
+            .from('user_events')
+            .select(`
+                *,
+                events!inner (*)
+            `)
+            .eq('user_id', currentUser.id)
+            .eq('events.is_active', true);
+
+        if (eventError) {
+            debugLog(`❌ Error loading user events: ${eventError.message}`, 'error');
+            
+            // Try alternative query for admin users
+            debugLog('🔄 Trying alternative query for user events...', 'warn');
+            const { data: altUserEvents, error: altEventError } = await supabase
+                .from('user_events')
+                .select('*')
+                .eq('user_id', currentUser.id);
+            
+            if (altEventError) {
+                debugLog(`❌ Alternative event query also failed: ${altEventError.message}`, 'error');
+                throw eventError;
+            }
+            
+            // Manually join with events table
+            const eventIds = altUserEvents?.map(ue => ue.event_id) || [];
+            if (eventIds.length > 0) {
+                const { data: events, error: eventsError } = await supabase
+                    .from('events')
+                    .select('*')
+                    .in('id', eventIds)
+                    .eq('is_active', true);
+                
+                if (eventsError) throw eventsError;
+                
+                // Manually combine the data
+                userEvents = altUserEvents.map(ue => ({
+                    ...ue,
+                    events: events.find(e => e.id === ue.event_id)
+                })).filter(ue => ue.events);
+                
+                debugLog(`✅ Alternative event query successful: ${userEvents.length} events`);
+            } else {
+                userEvents = [];
+            }
+        } else {
+            userEvents = directUserEvents;
+            debugLog(`✅ Direct event query successful: ${userEvents?.length || 0} events`);
+        }
+
+        const eventGrid = document.getElementById('myEventGrid');
+        eventGrid.innerHTML = '';
+
+        userEvents?.forEach(userEvent => {
+            if (userEvent.events) {
+                const eventCard = createMyEventCard({
+                    ...userEvent.events,
+                    user_events: {
+                        completed: userEvent.completed,
+                        last_completed_date: userEvent.last_completed_date,
+                        missions_completed: userEvent.missions_completed || 0   // ⬅️ เดิม
+                    }
+                });
+
+                if (userEvent.completed) {
+                    completedGrid.appendChild(eventCard);   // ⬅️ ถ้า complete → Hall of Fame
+                } else {
+                    eventGrid.appendChild(eventCard);       // ⬅️ ถ้ายังไม่ complete → ongoing
+                }
+            }
+        });
+
+        debugLog(`✅ Loaded ${userChallenges?.length || 0} user challenges and ${userEvents?.length || 0} user events`);
 
     } catch (error) {
         debugLog(`💥 Error loading my challenges: ${error.message}`, 'error');
@@ -1198,80 +1276,6 @@ async function getOrCreateUser(profile) {
     }
 }
 
-// Load user events with better error handling for admin users
-let userEvents = [];
-const { data: directUserEvents, error: eventError } = await supabase
-    .from('user_events')
-    .select(`
-        *,
-        events!inner (*)
-    `)
-    .eq('user_id', currentUser.id)
-    .eq('events.is_active', true);
-
-if (eventError) {
-    debugLog(`❌ Error loading user events: ${eventError.message}`, 'error');
-    
-    // Try alternative query for admin users
-    debugLog('🔄 Trying alternative query for user events...', 'warn');
-    const { data: altUserEvents, error: altEventError } = await supabase
-        .from('user_events')
-        .select('*')
-        .eq('user_id', currentUser.id);
-    
-    if (altEventError) {
-        debugLog(`❌ Alternative event query also failed: ${altEventError.message}`, 'error');
-        throw eventError;
-    }
-    
-    // Manually join with events table
-    const eventIds = altUserEvents?.map(ue => ue.event_id) || [];
-    if (eventIds.length > 0) {
-        const { data: events, error: eventsError } = await supabase
-            .from('events')
-            .select('*')
-            .in('id', eventIds)
-            .eq('is_active', true);
-        
-        if (eventsError) throw eventsError;
-        
-        // Manually combine the data
-        userEvents = altUserEvents.map(ue => ({
-            ...ue,
-            events: events.find(e => e.id === ue.event_id)
-        })).filter(ue => ue.events);
-        
-        debugLog(`✅ Alternative event query successful: ${userEvents.length} events`);
-    } else {
-        userEvents = [];
-    }
-} else {
-    userEvents = directUserEvents;
-    debugLog(`✅ Direct event query successful: ${userEvents?.length || 0} events`);
-}
-
-const eventGrid = document.getElementById('myEventGrid');
-const completedGrid = document.getElementById('progressCompleted');   // ⬅️ เพิ่ม
-eventGrid.innerHTML = '';
-completedGrid.innerHTML = '';                                          // ⬅️ เพิ่ม
-
-userEvents?.forEach(userEvent => {
-  if (userEvent.events) {
-    const eventCard = createMyEventCard({
-      ...userEvent.events,
-      user_events: {
-        completed: userEvent.completed,
-        last_completed_date: userEvent.last_completed_date,
-        missions_completed: userEvent.missions_completed || 0   // ⬅️ เดิม
-      }
-    });
-
-    if (userEvent.completed) {
-      completedGrid.appendChild(eventCard);   // ⬅️ ถ้า complete → Hall of Fame
-    } else {
-      eventGrid.appendChild(eventCard);       // ⬅️ ถ้ายังไม่ complete → ongoing
-    }
-  }
 
                 debugLog(`✅ Loaded ${userChallenges?.length || 0} user challenges and ${userEvents?.length || 0} user events`);
 
