@@ -1111,149 +1111,168 @@ async function getOrCreateUser(profile) {
     }
 }
 
-
                 async function loadMyChallenges() {
-            try {
-                debugLog('📊 Loading user challenges...');
+    try {
+        debugLog('📊 Loading user challenges...');
+        
+        if (!currentUser || !currentUser.id) {
+            debugLog('⚠️ No current user, skipping challenge load', 'warn');
+            return;
+        }
+        
+        // Load user challenges with better error handling for admin users
+        const { data: userChallenges, error: challengeError } = await supabase
+            .from('user_challenges')
+            .select(`
+                *,
+                challenges!inner (*)
+            `)
+            .eq('user_id', currentUser.id)
+            .eq('challenges.is_active', true);
+
+        if (challengeError) {
+            debugLog(`❌ Error loading user challenges: ${challengeError.message}`, 'error');
+            debugLog(`❌ Error code: ${challengeError.code}`, 'error');
+            debugLog(`❌ Error details: ${challengeError.details}`, 'error');
+            
+            // Try alternative query for admin users
+            debugLog('🔄 Trying alternative query for admin user...', 'warn');
+            const { data: altUserChallenges, error: altError } = await supabase
+                .from('user_challenges')
+                .select('*')
+                .eq('user_id', currentUser.id);
+            
+            if (altError) {
+                debugLog(`❌ Alternative query also failed: ${altError.message}`, 'error');
+                throw challengeError;
+            }
+            
+            // Manually join with challenges table
+            const challengeIds = altUserChallenges?.map(uc => uc.challenge_id) || [];
+            if (challengeIds.length > 0) {
+                const { data: challenges, error: challengesError } = await supabase
+                    .from('challenges')
+                    .select('*')
+                    .in('id', challengeIds)
+                    .eq('is_active', true);
                 
-                if (!currentUser || !currentUser.id) {
-                    debugLog('⚠️ No current user, skipping challenge load', 'warn');
-                    return;
-                }
+                if (challengesError) throw challengesError;
                 
-                // Load user challenges with better error handling for admin users
-                const { data: userChallenges, error: challengeError } = await supabase
-                    .from('user_challenges')
-                    .select(`
-                        *,
-                        challenges!inner (*)
-                    `)
-                    .eq('user_id', currentUser.id)
-                    .eq('challenges.is_active', true);
+                // Manually combine the data
+                const combinedData = altUserChallenges.map(uc => ({
+                    ...uc,
+                    challenges: challenges.find(c => c.id === uc.challenge_id)
+                })).filter(uc => uc.challenges);
+                
+                debugLog(`✅ Alternative query successful: ${combinedData.length} challenges`);
+                userChallenges = combinedData;
+            } else {
+                userChallenges = [];
+            }
+        } else {
+            debugLog(`✅ Direct query successful: ${userChallenges?.length || 0} challenges`);
+        }
 
-                if (challengeError) {
-                    debugLog(`❌ Error loading user challenges: ${challengeError.message}`, 'error');
-                    debugLog(`❌ Error code: ${challengeError.code}`, 'error');
-                    debugLog(`❌ Error details: ${challengeError.details}`, 'error');
-                    
-                    // Try alternative query for admin users
-                    debugLog('🔄 Trying alternative query for admin user...', 'warn');
-                    const { data: altUserChallenges, error: altError } = await supabase
-                        .from('user_challenges')
-                        .select('*')
-                        .eq('user_id', currentUser.id);
-                    
-                    if (altError) {
-                        debugLog(`❌ Alternative query also failed: ${altError.message}`, 'error');
-                        throw challengeError;
-                    }
-                    
-                    // Manually join with challenges table
-                    const challengeIds = altUserChallenges?.map(uc => uc.challenge_id) || [];
-                    if (challengeIds.length > 0) {
-                        const { data: challenges, error: challengesError } = await supabase
-                            .from('challenges')
-                            .select('*')
-                            .in('id', challengeIds)
-                            .eq('is_active', true);
-                        
-                        if (challengesError) throw challengesError;
-                        
-                        // Manually combine the data
-                        const combinedData = altUserChallenges.map(uc => ({
-                            ...uc,
-                            challenges: challenges.find(c => c.id === uc.challenge_id)
-                        })).filter(uc => uc.challenges);
-                        
-                        debugLog(`✅ Alternative query successful: ${combinedData.length} challenges`);
-                        userChallenges = combinedData;
-                    } else {
-                        userChallenges = [];
-                    }
+        const grid = document.getElementById('myChallengeGrid');
+        const completedGrid = document.getElementById('progressCompleted');   // ⬅️ เพิ่ม
+        grid.innerHTML = '';
+        completedGrid.innerHTML = '';                                         // ⬅️ เพิ่ม
+
+        userChallenges?.forEach(userChallenge => {
+            if (userChallenge.challenges) {
+                const card = createMyChallengeCard(userChallenge.challenges, userChallenge);
+
+                if (userChallenge.progress >= userChallenge.challenges.duration) {
+                    completedGrid.appendChild(card);  // ⬅️ ถ้าจบแล้ว → Hall of Fame
                 } else {
-                    debugLog(`✅ Direct query successful: ${userChallenges?.length || 0} challenges`);
+                    grid.appendChild(card);           // ⬅️ ยังไม่จบ → ongoing
                 }
+            }
+        });
 
-                const grid = document.getElementById('myChallengeGrid');
-                grid.innerHTML = '';
+        // 🔻 (ส่วนของ userEvents ยังไม่ได้แก้ใน snippet นี้ แต่ต้องทำ logic แบบเดียวกันแยก ongoing/completed)
 
-                userChallenges?.forEach(userChallenge => {
-                    if (userChallenge.challenges) {
-                        const card = createMyChallengeCard(userChallenge.challenges, userChallenge);
-                        grid.appendChild(card);
-                    }
-                });
+    } catch (error) {
+        debugLog(`💥 Error loading my challenges: ${error.message}`, 'error');
+        showToast('Error loading your challenges');
+    }
+}
 
-                // Load user events with better error handling for admin users
-                let userEvents = [];
-                const { data: directUserEvents, error: eventError } = await supabase
-                    .from('user_events')
-                    .select(`
-                        *,
-                        events!inner (*)
-                    `)
-                    .eq('user_id', currentUser.id)
-                    .eq('events.is_active', true);
+// Load user events with better error handling for admin users
+let userEvents = [];
+const { data: directUserEvents, error: eventError } = await supabase
+    .from('user_events')
+    .select(`
+        *,
+        events!inner (*)
+    `)
+    .eq('user_id', currentUser.id)
+    .eq('events.is_active', true);
 
-                if (eventError) {
-                    debugLog(`❌ Error loading user events: ${eventError.message}`, 'error');
-                    
-                    // Try alternative query for admin users
-                    debugLog('🔄 Trying alternative query for user events...', 'warn');
-                    const { data: altUserEvents, error: altEventError } = await supabase
-                        .from('user_events')
-                        .select('*')
-                        .eq('user_id', currentUser.id);
-                    
-                    if (altEventError) {
-                        debugLog(`❌ Alternative event query also failed: ${altEventError.message}`, 'error');
-                        throw eventError;
-                    }
-                    
-                    // Manually join with events table
-                    const eventIds = altUserEvents?.map(ue => ue.event_id) || [];
-                    if (eventIds.length > 0) {
-                        const { data: events, error: eventsError } = await supabase
-                            .from('events')
-                            .select('*')
-                            .in('id', eventIds)
-                            .eq('is_active', true);
-                        
-                        if (eventsError) throw eventsError;
-                        
-                        // Manually combine the data
-                        userEvents = altUserEvents.map(ue => ({
-                            ...ue,
-                            events: events.find(e => e.id === ue.event_id)
-                        })).filter(ue => ue.events);
-                        
-                        debugLog(`✅ Alternative event query successful: ${userEvents.length} events`);
-                    } else {
-                        userEvents = [];
-                    }
-                } else {
-                    userEvents = directUserEvents;
-                    debugLog(`✅ Direct event query successful: ${userEvents?.length || 0} events`);
-                }
+if (eventError) {
+    debugLog(`❌ Error loading user events: ${eventError.message}`, 'error');
+    
+    // Try alternative query for admin users
+    debugLog('🔄 Trying alternative query for user events...', 'warn');
+    const { data: altUserEvents, error: altEventError } = await supabase
+        .from('user_events')
+        .select('*')
+        .eq('user_id', currentUser.id);
+    
+    if (altEventError) {
+        debugLog(`❌ Alternative event query also failed: ${altEventError.message}`, 'error');
+        throw eventError;
+    }
+    
+    // Manually join with events table
+    const eventIds = altUserEvents?.map(ue => ue.event_id) || [];
+    if (eventIds.length > 0) {
+        const { data: events, error: eventsError } = await supabase
+            .from('events')
+            .select('*')
+            .in('id', eventIds)
+            .eq('is_active', true);
+        
+        if (eventsError) throw eventsError;
+        
+        // Manually combine the data
+        userEvents = altUserEvents.map(ue => ({
+            ...ue,
+            events: events.find(e => e.id === ue.event_id)
+        })).filter(ue => ue.events);
+        
+        debugLog(`✅ Alternative event query successful: ${userEvents.length} events`);
+    } else {
+        userEvents = [];
+    }
+} else {
+    userEvents = directUserEvents;
+    debugLog(`✅ Direct event query successful: ${userEvents?.length || 0} events`);
+}
 
-                const eventGrid = document.getElementById('myEventGrid');
-                eventGrid.innerHTML = '';
+const eventGrid = document.getElementById('myEventGrid');
+const completedGrid = document.getElementById('progressCompleted');   // ⬅️ เพิ่ม
+eventGrid.innerHTML = '';
+completedGrid.innerHTML = '';                                          // ⬅️ เพิ่ม
 
-                userEvents?.forEach(userEvent => {
+userEvents?.forEach(userEvent => {
   if (userEvent.events) {
     const eventCard = createMyEventCard({
       ...userEvent.events,
       user_events: {
         completed: userEvent.completed,
         last_completed_date: userEvent.last_completed_date,
-        missions_completed: userEvent.missions_completed || 0   // ⬅️ เพิ่มบรรทัดนี้
+        missions_completed: userEvent.missions_completed || 0   // ⬅️ เดิม
       }
     });
-    eventGrid.appendChild(eventCard);
+
+    if (userEvent.completed) {
+      completedGrid.appendChild(eventCard);   // ⬅️ ถ้า complete → Hall of Fame
+    } else {
+      eventGrid.appendChild(eventCard);       // ⬅️ ถ้ายังไม่ complete → ongoing
+    }
   }
 });
-
-
 
                 debugLog(`✅ Loaded ${userChallenges?.length || 0} user challenges and ${userEvents?.length || 0} user events`);
 
