@@ -1310,15 +1310,15 @@ async function getOrCreateUser(profile) {
         try {
             const urls = typeof event.image_urls === "string" ? JSON.parse(event.image_urls) : event.image_urls;
             imagesHtml = `
-                <div class="flex overflow-x-auto space-x-2 mb-3">
-                    ${urls.map(url =>
-                        `<img src="${url}" class="rounded-lg w-32 h-20 object-cover flex-shrink-0">`
-                    ).join('')}
-                </div>`;
-        } catch {
-            imagesHtml = `<img src="${event.image_urls}" class="rounded-lg w-32 h-20 object-cover mb-3">`;
-        }
-    }
+  <div class="flex overflow-x-auto space-x-3 mb-3">
+      ${urls.map(url =>
+          `<img src="${url}" class="rounded-lg w-80 h-48 object-cover flex-shrink-0">`
+      ).join('')}
+  </div>`;
+} catch {
+  imagesHtml = `<img src="${event.image_urls}" class="rounded-lg w-80 h-48 object-cover mb-3">`;
+}
+}
 
     // Parse start / end date
     const eventDateStr = event.start_date.replace('T', ' ').split('+')[0];
