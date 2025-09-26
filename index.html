@@ -1728,12 +1728,10 @@ closeEventDetail();
             debugLog(`⚠️ Event participant count update failed: ${countError.message}`, 'warn');
         }
 
-        // Add points to user (ใช้ completion_points จาก eventData)
-        const points = eventData.completion_points || 30;
-        await updateUserPoints(points);
+        // ไม่เพิ่มคะแนนแล้ว
+debugLog(`✅ Joined event: ${eventData?.name}`);
+showToast(`Joined ${eventData?.name}!`);
 
-        debugLog(`✅ Joined event: ${eventData?.name}`);
-        showToast(`Joined ${eventData?.name}! +${points} points`);
         
         // Reload events to update UI
         setTimeout(async () => {
