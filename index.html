@@ -1196,7 +1196,7 @@ async function getOrCreateUser(profile) {
         debugLog(`💥 Error loading my challenges: ${error.message}`, 'error');
         showToast('Error loading your challenges');
     }
-});
+}
 
 // Load user events with better error handling for admin users
 let userEvents = [];
