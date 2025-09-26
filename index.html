@@ -2173,7 +2173,7 @@ async function redirectToPaymentGateway(eventId, price, image_url) {
     const newMissions = (ue?.missions_completed || 0) + 1;
     const isCompleted = newMissions >= (event.total_missions || 1);
 
-    // ✅ Hybrid Point System ⬅️ เพิ่มตรงนี้
+    // ✅ Hybrid Point System + Proof Bonus ⬅️ ปรับเพิ่มตรงนี้
     let pointsEarned = 0;
     const perMission = 10; // fix 10 แต้มทุก mission
     const finalBonus = (event.completion_points || 0) - (perMission * ((event.total_missions || 1) - 1));
@@ -2183,6 +2183,9 @@ async function redirectToPaymentGateway(eventId, price, image_url) {
     } else if (newMissions === event.total_missions) {
         pointsEarned = finalBonus; // โบนัสตอน mission สุดท้าย
     }
+
+    // ➕ Proof Bonus ⬅️ เพิ่มตรงนี้
+    pointsEarned += withPhoto ? 5 : 2;
 
     if (pointsEarned > 0) {
         await updateUserPoints(pointsEarned);
@@ -2221,7 +2224,6 @@ async function redirectToPaymentGateway(eventId, price, image_url) {
         await loadMyEvents();
     }
 }
-
 
                 closePhotoUpload();
                 
