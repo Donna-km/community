@@ -1174,15 +1174,22 @@ async function getOrCreateUser(profile) {
                     debugLog(`✅ Direct query successful: ${userChallenges?.length || 0} challenges`);
                 }
 
-                const grid = document.getElementById('myChallengeGrid');
-                grid.innerHTML = '';
+               const completedGrid = document.getElementById('progressCompleted');
+completedGrid.innerHTML = '';
 
-                userChallenges?.forEach(userChallenge => {
-                    if (userChallenge.challenges) {
-                        const card = createMyChallengeCard(userChallenge.challenges, userChallenge);
-                        grid.appendChild(card);
-                    }
-                });
+userChallenges?.forEach(userChallenge => {
+  if (userChallenge.challenges) {
+    if (userChallenge.progress >= userChallenge.challenges.duration) {
+      // complete → Hall of Fame
+      const card = createMyChallengeCard(userChallenge.challenges, userChallenge);
+      completedGrid.appendChild(card);
+    } else {
+      // ongoing → My Progress
+      const card = createMyChallengeCard(userChallenge.challenges, userChallenge);
+      grid.appendChild(card);
+    }
+  }
+});
 
                 // Load user events with better error handling for admin users
                 let userEvents = [];
