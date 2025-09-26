@@ -1110,8 +1110,7 @@ async function getOrCreateUser(profile) {
         showToast(`Error: ${error.message}`);
     }
 }
-
-                async function loadMyChallenges() {
+async function loadMyChallenges() {
     try {
         debugLog('📊 Loading user challenges...');
         
@@ -1176,18 +1175,18 @@ async function getOrCreateUser(profile) {
         }
 
         const grid = document.getElementById('myChallengeGrid');
-        const completedGrid = document.getElementById('progressCompleted');   // ⬅️ เพิ่ม
+        const completedGrid = document.getElementById('progressCompleted');   // Hall of Fame container
         grid.innerHTML = '';
-        completedGrid.innerHTML = '';                                         // ⬅️ เพิ่ม
+        completedGrid.innerHTML = '';
 
         userChallenges?.forEach(userChallenge => {
             if (userChallenge.challenges) {
                 const card = createMyChallengeCard(userChallenge.challenges, userChallenge);
-
-                if (userChallenge.progress >= userChallenge.challenges.duration) {
-                    completedGrid.appendChild(card);  // ⬅️ ถ้าจบแล้ว → Hall of Fame
+                const isCompleted = (userChallenge.progress || 0) >= (userChallenge.challenges?.duration || 0);
+                if (isCompleted) {
+                    completedGrid.appendChild(card);   // ✅ จบแล้ว → Hall of Fame
                 } else {
-                    grid.appendChild(card);           // ⬅️ ยังไม่จบ → ongoing
+                    grid.appendChild(card);            // ⏳ ongoing
                 }
             }
         });
@@ -1256,14 +1255,14 @@ async function getOrCreateUser(profile) {
                     user_events: {
                         completed: userEvent.completed,
                         last_completed_date: userEvent.last_completed_date,
-                        missions_completed: userEvent.missions_completed || 0   // ⬅️ เดิม
+                        missions_completed: userEvent.missions_completed || 0
                     }
                 });
 
                 if (userEvent.completed) {
-                    completedGrid.appendChild(eventCard);   // ⬅️ ถ้า complete → Hall of Fame
+                    completedGrid.appendChild(eventCard);   // ✅ event จบแล้ว → Hall of Fame
                 } else {
-                    eventGrid.appendChild(eventCard);       // ⬅️ ถ้ายังไม่ complete → ongoing
+                    eventGrid.appendChild(eventCard);       // ⏳ ยังไม่จบ → ongoing
                 }
             }
         });
@@ -1276,16 +1275,7 @@ async function getOrCreateUser(profile) {
     }
 }
 
-
-                debugLog(`✅ Loaded ${userChallenges?.length || 0} user challenges and ${userEvents?.length || 0} user events`);
-
-            } catch (error) {
-                debugLog(`💥 Error loading my challenges: ${error.message}`, 'error');
-                showToast('Error loading your challenges');
-            }
-        }
-
-        function createMyChallengeCard(challenge, userChallenge) {
+            function createMyChallengeCard(challenge, userChallenge) {
             const div = document.createElement('div');
             div.className = 'bg-white rounded-xl shadow-md p-6';
 
