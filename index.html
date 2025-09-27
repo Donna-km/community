@@ -1417,17 +1417,23 @@ async function loadMyChallenges() {
             // ✅ ถ้า event complete แล้ว → return trophy card ไปเลย
 if (event.user_events?.completed) {
     div.innerHTML = `
-        <div class="bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 
-                    rounded-2xl shadow-2xl p-8 text-center text-white animate-pulse">
-            <div class="text-7xl mb-4">🏆</div>
-            <h3 class="text-3xl font-extrabold mb-2 drop-shadow-lg">${event.name}</h3>
-            <p class="text-xl mb-6">🎉 Event Complete! 🎉</p>
-            <div class="bg-white text-yellow-700 px-6 py-3 rounded-full font-bold inline-block shadow-lg text-lg">
-                +${event.completion_points} Points Earned
+        <div class="transform scale-90 md:scale-95">
+            <div class="bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 
+                        rounded-xl shadow-md p-4 text-center text-white">
+                <div class="text-5xl mb-2">🏆</div>
+                <h3 class="text-xl font-bold mb-1 drop-shadow">${event.name}</h3>
+                <p class="text-sm mb-3">🎉 Event Complete! 🎉</p>
+                <div class="bg-white text-yellow-700 px-3 py-1 rounded-full font-semibold inline-block shadow text-sm">
+                    +${event.completion_points} Points
+                </div>
+                <div class="mt-2 text-xs italic opacity-90">
+                    Congratulations! You finished this event ✨
+                </div>
             </div>
-            <div class="mt-6 text-sm italic opacity-90">Congratulations! You finished this event in style ✨</div>
         </div>
     `;
+}
+
     return div; // 🛑 ไม่ต้องไป render การ์ดปกติ
 }
 
