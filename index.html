@@ -1276,56 +1276,75 @@ async function loadMyChallenges() {
 }
 
             function createMyChallengeCard(challenge, userChallenge) {
-            const div = document.createElement('div');
-            div.className = 'bg-white rounded-xl shadow-md p-6';
+    const div = document.createElement('div');
+    div.className = 'bg-white rounded-xl shadow-md p-6';
 
-                     
-            const progressPercent = (userChallenge.progress / challenge.duration) * 100;
-            const isComplete = userChallenge.progress >= challenge.duration;
-            
-            // Check if completed today based on completed_today flag and reset at midnight
-            const completedToday = checkIfCompletedToday(userChallenge);
-            
-            div.innerHTML = `
-                   <div class="flex items-center justify-between mb-4">
-                    <div class="flex items-center space-x-3">
-                        <div class="text-2xl">${challenge.emoji}</div>
-                        <div>
-                            <h3 class="font-bold text-gray-800">${challenge.name}</h3>
-                            <div class="text-sm text-gray-500">Day ${userChallenge.progress || 0}/${challenge.duration}</div>
-                        </div>
-                    </div>
-                    <div class="flex items-center space-x-1">
-                        <span class="text-xl streak-fire">🔥</span>
-                        <span class="font-bold text-red-600">${userChallenge.streak || 0}</span>
-                    </div>
+    const progressPercent = (userChallenge.progress / challenge.duration) * 100;
+    const isComplete = userChallenge.progress >= challenge.duration;
+    
+    // Check if completed today based on completed_today flag and reset at midnight
+    const completedToday = checkIfCompletedToday(userChallenge);
+
+    // 🎖️ Medal Tier Logic
+    let medal = "🥉"; 
+    let bg = "from-amber-600 via-yellow-700 to-yellow-800"; // bronze
+
+    if (challenge.duration >= 30) {
+        medal = "🥇";
+        bg = "from-yellow-300 via-yellow-400 to-yellow-500"; // gold
+    } else if (challenge.duration >= 14) {
+        medal = "🥈";
+        bg = "from-gray-300 via-gray-400 to-gray-500"; // silver
+    }
+
+    div.innerHTML = `
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center space-x-3">
+                <div class="text-2xl">${challenge.emoji}</div>
+                <div>
+                    <h3 class="font-bold text-gray-800">${challenge.name}</h3>
+                    <div class="text-sm text-gray-500">Day ${userChallenge.progress || 0}/${challenge.duration}</div>
                 </div>
-                
-                <div class="mb-4">
-                    <div class="flex justify-between text-sm text-gray-600 mb-1">
-                        <span>Progress</span>
-                        <span>${Math.round(progressPercent)}%</span>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="progress-bar h-2 rounded-full transition-all duration-300" style="width: ${progressPercent}%"></div>
-                    </div>
-                </div>
-                
-                ${isComplete ? 
-                    '<div class="text-center py-4"><div class="text-4xl mb-2">🎉</div><div class="text-green-600 font-bold">Challenge Complete!</div></div>' :
-                    completedToday ?
-                    '<button class="w-full bg-green-500 text-white py-3 rounded-lg font-medium" disabled>✅ Completed Today</button>' :
-                    `<button onclick="markDone(${challenge.id})" class="w-full custom-red text-white py-3 rounded-lg font-medium custom-red-hover">
-                        ✅ Done Today
-                    </button>`
-                }
-                <button onclick="removeChallenge(${challenge.id})" class="w-full bg-gray-500 text-white py-2 rounded-lg font-medium hover:bg-gray-600 mt-2">
-                    🗑️ Remove Challenge
-                </button>
-            `;
-            
-            return div;
+            </div>
+            <div class="flex items-center space-x-1">
+                <span class="text-xl streak-fire">🔥</span>
+                <span class="font-bold text-red-600">${userChallenge.streak || 0}</span>
+            </div>
+        </div>
+        
+        <div class="mb-4">
+            <div class="flex justify-between text-sm text-gray-600 mb-1">
+                <span>Progress</span>
+                <span>${Math.round(progressPercent)}%</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+                <div class="progress-bar h-2 rounded-full transition-all duration-300" style="width: ${progressPercent}%"></div>
+            </div>
+        </div>
+        
+        ${isComplete ? `
+            <div class="bg-gradient-to-r ${bg}
+                        w-full aspect-square rounded-full shadow-md flex flex-col items-center justify-center 
+                        text-center text-white my-2 transition-transform duration-300 hover:scale-105 hover:shadow-lg">
+                <div class="text-5xl mb-2 animate-pulse">${medal}</div>
+                <h3 class="text-sm font-bold">${challenge.name}</h3>
+                <p class="text-xs">+${challenge.completion_points || 10} pts</p>
+            </div>
+        ` :
+        completedToday ?
+            '<button class="w-full bg-green-500 text-white py-3 rounded-lg font-medium" disabled>✅ Completed Today</button>' :
+            `<button onclick="markDone(${challenge.id})" class="w-full custom-red text-white py-3 rounded-lg font-medium custom-red-hover">
+                ✅ Done Today
+            </button>`
         }
+        <button onclick="removeChallenge(${challenge.id})" class="w-full bg-gray-500 text-white py-2 rounded-lg font-medium hover:bg-gray-600 mt-2">
+            🗑️ Remove Challenge
+        </button>
+    `;
+    
+    return div;
+}
+
 
         function createMyEventCard(event) {
     const div = document.createElement('div');
