@@ -1414,18 +1414,18 @@ async function loadMyChallenges() {
             <div class="bg-green-500 h-2 rounded-full" style="width:${(completedMissions / totalMissions) * 100}%"></div>
         </div>` : "";
 
-            // ✅ ถ้า event complete แล้ว → return trophy card ไปเลย
+            // ✅ ถ้า event complete แล้ว → return badge card
 if (event.user_events?.completed) {
+    // เลือกทรงสุ่ม
+    const shapes = ["rounded-full", "rounded-xl", "clip-hexagon", "clip-diamond"];
+    const shape = shapes[Math.floor(Math.random() * shapes.length)];
+
     div.innerHTML = `
         <div class="bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 
-                    rounded-2xl shadow-2xl p-8 text-center text-white animate-pulse">
-            <div class="text-7xl mb-4">🏆</div>
-            <h3 class="text-3xl font-extrabold mb-2 drop-shadow-lg">${event.name}</h3>
-            <p class="text-xl mb-6">🎉 Event Complete! 🎉</p>
-            <div class="bg-white text-yellow-700 px-6 py-3 rounded-full font-bold inline-block shadow-lg text-lg">
-                +${event.completion_points} Points Earned
-            </div>
-            <div class="mt-6 text-sm italic opacity-90">Congratulations! You finished this event in style ✨</div>
+                    w-full aspect-square ${shape} shadow-md flex flex-col items-center justify-center text-center text-white">
+            <div class="text-3xl mb-1">🏆</div>
+            <h3 class="text-sm font-bold">${event.name}</h3>
+            <p class="text-[10px]">+${event.completion_points} pts</p>
         </div>
     `;
     return div; // 🛑 ไม่ต้องไป render การ์ดปกติ
