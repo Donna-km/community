@@ -55,15 +55,36 @@
         }
         .masonry {
   display: grid;
-  grid-template-columns: repeat(2, 1fr); /* 2 columns on mobile */
+  grid-template-columns: repeat(2, minmax(0, 1fr)); /* 2 columns on mobile */
   gap: 1rem;
+}
+
+.masonry > div {
+  max-width: 100%;
+  border-radius: 1rem;
+  padding: 1rem; /* keep padding smaller on mobile */
+}
+
+@media (max-width: 640px) {
+  .masonry > div {
+    font-size: 0.85rem;      /* shrink font size */
+  }
+  .masonry > div h3,
+  .masonry > div .text-3xl,
+  .masonry > div .text-2xl {
+    font-size: 1rem !important; /* shrink headings */
+  }
+  .masonry > div .text-xl {
+    font-size: 0.9rem !important;
+  }
 }
 
 @media (min-width: 1024px) {
   .masonry {
-    grid-template-columns: repeat(4, 1fr); /* 4 columns on desktop */
+    grid-template-columns: repeat(4, minmax(0, 1fr)); /* 4 columns on desktop */
   }
 }
+
 
         .debug-panel {
             position: fixed;
