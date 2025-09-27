@@ -77,6 +77,22 @@
             overflow-y: auto;
             z-index: 100;
             display: none;
+
+            @keyframes spin-once {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.1); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+@keyframes bling {
+  0%, 100% { box-shadow: 0 0 10px rgba(255,255,255,0.2); }
+  50% { box-shadow: 0 0 25px rgba(255,255,255,0.8); }
+}
+
+.latest-badge {
+  animation: spin-once 1.5s ease-out, bling 2s ease-in-out infinite;
+}
+
         }
     </style>
 </head>
@@ -1445,13 +1461,13 @@ if (event.user_events?.completed) {
     div.className = ""; // ล้าง class เดิมกัน bg-blue
 
     div.innerHTML = `
-        <div class="bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 
-                    w-full aspect-square rounded-full shadow-md flex flex-col items-center justify-center 
-                    text-center text-white my-2 transition-transform duration-300 hover:scale-105 hover:shadow-lg">
-            <div class="text-5xl mb-2 animate-pulse">🏆</div>
-            <h3 class="text-sm font-bold">${event.name}</h3>
-            <p class="text-xs">+${event.completion_points} pts</p>
-        </div>
+       <div class="bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 
+            w-full aspect-square rounded-full shadow-md flex flex-col items-center justify-center 
+            text-center text-white my-2 transition-transform duration-300 hover:scale-105 hover:shadow-lg latest-badge">
+    <div class="text-5xl mb-2 animate-pulse">🏆</div>
+    <h3 class="text-sm font-bold">${event.name}</h3>
+    <p class="text-xs">+${event.completion_points} pts</p>
+</div>
     `;
     return div; // 🛑 ไม่ต้องไป render การ์ดปกติ
 }
