@@ -54,14 +54,17 @@
             margin-bottom: 1rem;
         }
         .masonry {
-            column-count: 2;
-            column-gap: 1rem;
-        }
-        @media (min-width: 768px) {
-            .masonry {
-                column-count: 3;
-            }
-        }
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2 columns on mobile */
+  gap: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .masonry {
+    grid-template-columns: repeat(4, 1fr); /* 4 columns on desktop */
+  }
+}
+
         .debug-panel {
             position: fixed;
             top: 80px;
