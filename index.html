@@ -1318,12 +1318,13 @@ async function loadMyChallenges() {
         div.className = ""; // ล้าง class เดิม
         div.innerHTML = `
             <div class="bg-gradient-to-r ${bg}
-                        w-full aspect-square rounded-full shadow-md flex flex-col items-center justify-center 
-                        text-center text-white my-2 transition-transform duration-300 hover:scale-105 hover:shadow-lg">
-                <div class="text-5xl mb-2 animate-pulse">${medal}</div>
-                <h3 class="text-sm font-bold">${challenge.name}</h3>
-                <p class="text-xs">+${challenge.completion_points || 10} pts</p>
-            </div>
+            w-full aspect-square rounded-full shadow-md flex flex-col items-center justify-center 
+            text-center text-white my-2 transition-transform duration-300 hover:scale-105 hover:shadow-lg latest-badge">
+    <div class="text-5xl mb-2 animate-pulse">${medal}</div>
+    <h3 class="text-sm font-bold">${challenge.name}</h3>
+    <p class="text-xs">+${challenge.completion_points || 10} pts</p>
+</div>
+
         `;
     } else {
         // ⏳ ยังไม่ complete → โชว์แบบเดิม
