@@ -1416,14 +1416,13 @@ async function loadMyChallenges() {
 
             // ✅ ถ้า event complete แล้ว → return circle badge
 if (event.user_events?.completed) {
-    // ลบ class เดิมออก (กันไม่ให้มี bg-blue หรือ border ฟ้าเหลือ)
-    div.className = "";
+    div.className = ""; // ล้าง class เดิมกัน bg-blue
 
-    // ใส่ badge วงกลมเต็มพื้นที่
     div.innerHTML = `
         <div class="bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 
-                    w-full aspect-square rounded-full shadow-md flex flex-col items-center justify-center text-center text-white">
-            <div class="text-5xl mb-2">🏆</div> <!-- 👈 trophy ใหญ่ขึ้น -->
+                    w-full aspect-square rounded-full shadow-md flex flex-col items-center justify-center 
+                    text-center text-white my-2 transition-transform duration-300 hover:scale-105 hover:shadow-lg">
+            <div class="text-5xl mb-2 animate-pulse">🏆</div>
             <h3 class="text-sm font-bold">${event.name}</h3>
             <p class="text-xs">+${event.completion_points} pts</p>
         </div>
