@@ -54,39 +54,49 @@
             margin-bottom: 1rem;
         }
         /* Hall of Fame layout */
+/* Hall of Fame Grid */
 .masonry {
   display: grid;
-  grid-template-columns: repeat(2, 1fr); /* 2 columns on mobile */
-  gap: 0.2rem; /* ช่องว่างระหว่างการ์ดให้เล็กลง */
+  grid-template-columns: repeat(2, 1fr); /* 2 คอลัมน์ใน mobile */
+  gap: 0.75rem; /* ช่องว่างเล็กลง */
 }
 
-/* การ์ดแต่ละใบ */
+/* การ์ดแต่ละใบให้เป็นสี่เหลี่ยมจตุรัส */
 .masonry > div {
-  transform: scale(0.85);   /* ย่อการ์ดทั้งใบลง */
-  transform-origin: top center;
-  font-size: 0.8rem;        /* ลดขนาด font */
-  padding: 0.75rem;         /* padding น้อยลง */
+  aspect-ratio: 1 / 1;         /* ทำให้เป็นสี่เหลี่ยมจตุรัส */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;     /* จัด content ให้อยู่ตรงกลางแนวตั้ง */
+  align-items: center;         /* จัดให้อยู่ตรงกลางแนวนอน */
+  padding: 0.5rem;
+  font-size: 0.75rem;          /* ลดขนาด font */
+  border-radius: 0.75rem;
+  overflow: hidden;
 }
 
+/* ขนาด emoji/trophy และ title */
+.masonry > div .text-7xl,
+.masonry > div .text-6xl,
+.masonry > div .text-5xl,
 .masonry > div h3 {
-  font-size: 1rem !important; /* ชื่อ challenge/event */
+  font-size: 1rem !important; /* ทำให้เล็กลง */
+  line-height: 1.2;
 }
 
+/* ข้อความเล็กๆ ข้างใน */
+.masonry > div p,
 .masonry > div .text-xl,
-.masonry > div .text-2xl,
-.masonry > div .text-3xl {
-  font-size: 0.9rem !important; /* หัวข้อใหญ่ให้เล็กลง */
+.masonry > div .text-lg {
+  font-size: 0.75rem !important;
 }
 
+/* Desktop: 4 การ์ดต่อแถว */
 @media (min-width: 1024px) {
   .masonry {
-    grid-template-columns: repeat(4, 1fr); /* 4 columns บน desktop */
-  }
-  .masonry > div {
-    transform: scale(0.9);   /* desktop ยังย่อเล็กน้อย */
-    font-size: 0.9rem;
+    grid-template-columns: repeat(4, 1fr);
   }
 }
+
 
 
         .debug-panel {
