@@ -146,6 +146,7 @@
 
   <!-- Completed (ใหม่) -->
   <div id="progressCompleted" class="masonry hidden">
+  <div id="medalCounter" class="col-span-full text-center text-gray-700 font-bold mb-4"></div>
     <!-- Completed challenge/event cards จะ populate ที่นี่ -->
   </div>
 </section>
@@ -2969,6 +2970,16 @@ function showProgressTab(tab) {
     tabCompleted.classList.add('border-red-500', 'text-red-600');
     tabOngoing.classList.remove('border-red-500', 'text-red-600');
     tabOngoing.classList.add('text-gray-500');
+  }
+}
+function updateMedalCounter() {
+  const container = document.getElementById("progressCompleted");
+  if (!container) return;
+
+  const medals = container.querySelectorAll(".rounded-full"); // badge ทุกอัน
+  const counter = document.getElementById("medalCounter");
+  if (counter) {
+    counter.textContent = `You have collected ${medals.length} Medals 🏅`;
   }
 }
 
