@@ -1654,7 +1654,11 @@ function markEventDone(eventId) {
         // ใช้รูปที่อัปโหลด หรือ default
     let eventImage = '';
     if (event.image_urls && event.image_urls.length > 0) {
-        eventImage = event.image_urls[0];
+        eventImage = <div class="flex overflow-x-auto space-x-3 mb-3">
+    ${event.image_urls.map(url =>
+      `<img src="${url}" class="rounded-lg w-80 h-48 object-cover flex-shrink-0">`
+    ).join('')}
+  </div>`;
     } else {
         let defaultImage = "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400";
         const eventName = event.name.toLowerCase();
