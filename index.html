@@ -2990,18 +2990,34 @@ function updateMedalCounter() {
     counter.textContent = `You have collected ${medals.length} Medals 🏆🏅`;
   }
 }
-    function updateHallOfFameProfile() {
-  const container = document.getElementById("hallOfFameProfile");
-  if (!container || !currentUser) return;
+    // ✅ ฟังก์ชัน updateHallOfFameProfile
+  function updateHallOfFameProfile() {
+    const container = document.getElementById("hallOfFameProfile");
+    if (!container || !currentUser) {
+      console.log("⚠️ Hall of Fame profile: currentUser ไม่มีค่า");
+      return;
+    }
 
-  container.innerHTML = `
-    <img src="${currentUser.user_picture || 'https://via.placeholder.com/100'}"
-         alt="Profile"
-         class="w-24 h-24 rounded-full shadow-md mb-3">
-    <h2 class="text-xl font-bold text-gray-800">${currentUser.name || 'Guest'}</h2>
-    <p class="text-sm text-gray-500">Total Points: ${currentUser.points || 0}</p>
-  `;
-}
+    container.innerHTML = `
+      <img src="${currentUser.user_picture || 'https://via.placeholder.com/100'}"
+           alt="Profile"
+           class="w-24 h-24 rounded-full shadow-md mb-3">
+      <h2 class="text-xl font-bold text-gray-800">${currentUser.name || 'Guest'}</h2>
+      <p class="text-sm text-gray-500">Total Points: ${currentUser.points || 0}</p>
+    `;
+  }
+
+  // ✅ เรียกหลังจาก currentUser ถูกโหลดจาก Supabase แล้ว
+  async function initApp() {
+    const profile = await liff.getProfile();
+    currentUser = await getOrCreateUser(profile);
+
+    updateHallOfFameProfile(); // ⬅️ เรียกตรงนี้
+    loadMyChallenges();
+    loadMyEvents();
+  }
+
+  initApp();
 
 
 </script>
