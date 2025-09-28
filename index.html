@@ -144,6 +144,10 @@
     <div id="myEventGrid" class="space-y-4"></div>
   </div>
 
+    <!-- Hall of Fame Header -->
+<div id="hallOfFameProfile" class="flex flex-col items-center justify-center my-6">
+  <!-- JS จะมาเติมข้อมูลตรงนี้ -->
+</div>
   <!-- Completed (ใหม่) -->
   <div id="medalCounter" class="col-span-full text-center text-gray-700 font-bold mb-4"></div>  
   <div id="progressCompleted" class="masonry hidden">
@@ -2986,6 +2990,19 @@ function updateMedalCounter() {
     counter.textContent = `You have collected ${medals.length} Medals 🏆🏅`;
   }
 }
+    function updateHallOfFameProfile() {
+  const container = document.getElementById("hallOfFameProfile");
+  if (!container || !currentUser) return;
+
+  container.innerHTML = `
+    <img src="${currentUser.user_picture || 'https://via.placeholder.com/100'}"
+         alt="Profile"
+         class="w-24 h-24 rounded-full shadow-md mb-3">
+    <h2 class="text-xl font-bold text-gray-800">${currentUser.name || 'Guest'}</h2>
+    <p class="text-sm text-gray-500">Total Points: ${currentUser.points || 0}</p>
+  `;
+}
+
 
 </script>
 
