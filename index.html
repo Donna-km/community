@@ -1288,31 +1288,31 @@ updateMedalCounter();
     const isComplete = userChallenge.progress >= challenge.duration;
     
     // Check if completed today based on completed_today flag and reset at midnight
-    const completedToday = checkIfCompletedToday(userChallenge);
+const completedToday = checkIfCompletedToday(userChallenge);
 
-    // 🎖️ Medal Tier Logic
-    let medal = "🥉"; 
-    let bg = "from-amber-600 via-yellow-700 to-yellow-800"; // bronze
+// 🎖️ Medal Tier Logic
+let medal = "🥉"; 
+let bg = "from-amber-600 via-yellow-700 to-yellow-800"; // bronze
 
-    if (challenge.duration >= 30) {
-        medal = "🥇";
-        bg = "from-yellow-300 via-yellow-400 to-yellow-500"; // gold
-    } else if (challenge.duration >= 14) {
-        medal = "🥈";
-        bg = "from-gray-300 via-gray-400 to-gray-500"; // silver
-    }
+if (challenge.duration >= 30) {
+    medal = "🥇";
+    bg = "from-yellow-300 via-yellow-400 to-yellow-500"; // gold
+} else if (challenge.duration >= 14) {
+    medal = "🥈";
+    bg = "from-gray-300 via-gray-400 to-gray-500"; // silver
+}
 
-    if (isComplete) {
-        // ✅ ถ้า complete → โชว์เฉพาะ badge วงกลม
-        div.className = ""; // ล้าง class เดิม
-        div.innerHTML = `
-            <div class="bg-gradient-to-r ${bg}
-                        w-full aspect-square rounded-full shadow-md flex flex-col items-center justify-center 
-                        text-center text-white my-2 transition-transform duration-300 hover:scale-105 hover:shadow-lg">
-                <div class="text-5xl mb-2 animate-pulse">${medal}</div>
-                <h3 class="text-sm font-bold">${challenge.name}</h3>
-                <p class="text-xs">+${challenge.completion_points || 10} pts</p>
-            </div>
+if (isComplete) {
+    // ✅ ถ้า complete → โชว์เฉพาะ badge วงกลม
+    div.className = ""; // ล้าง class เดิม
+    div.innerHTML = `
+        <div class="bg-gradient-to-r ${bg}
+                    w-full aspect-square rounded-full shadow-md flex flex-col items-center justify-center 
+                    text-center text-white p-2 my-2 transition-transform duration-300 hover:scale-105 hover:shadow-lg">
+            <div class="text-4xl mb-1 animate-pulse">${medal}</div>
+            <h3 class="text-xs font-bold mb-1">${challenge.name}</h3>
+            <p class="text-[10px]">+${challenge.completion_points || 10} pts</p>
+        </div>
         `;
     } else {
         // ⏳ ยังไม่ complete → โชว์แบบเดิม
@@ -1445,17 +1445,18 @@ updateMedalCounter();
             <div class="bg-green-500 h-2 rounded-full" style="width:${(completedMissions / totalMissions) * 100}%"></div>
         </div>` : "";
 
-            // ✅ ถ้า event complete แล้ว → return circle badge
+            // ✅ ถ้า event complete แล้ว → return trophy card ไปเลย
 if (event.user_events?.completed) {
-    div.className = ""; // ล้าง class เดิมกัน bg-blue
-
     div.innerHTML = `
         <div class="bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 
-                    w-full aspect-square rounded-full shadow-md flex flex-col items-center justify-center 
-                    text-center text-white my-2 transition-transform duration-300 hover:scale-105 hover:shadow-lg">
-            <div class="text-5xl mb-2 animate-pulse">🏆</div>
-            <h3 class="text-sm font-bold">${event.name}</h3>
-            <p class="text-xs">+${event.completion_points} pts</p>
+                    rounded-xl shadow-md p-4 text-center text-white animate-pulse">
+            <div class="text-4xl mb-2">🏆</div>
+            <h3 class="text-sm font-bold mb-1 drop-shadow">${event.name}</h3>
+            <p class="text-xs mb-2">🎉 Event Complete! 🎉</p>
+            <div class="bg-white text-yellow-700 px-3 py-1 rounded-full font-bold inline-block shadow text-xs">
+                +${event.completion_points} pts
+            </div>
+            <div class="mt-2 text-[10px] italic opacity-90">Congratulations! ✨</div>
         </div>
     `;
     return div; // 🛑 ไม่ต้องไป render การ์ดปกติ
