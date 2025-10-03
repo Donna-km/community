@@ -115,7 +115,7 @@
     <!-- Main Content -->
     <main class="p-4 space-y-6">
         <!-- Challenge Board Section -->
-        <section id="challengeBoard" class="space-y-4">
+        <section id="challengeBoard" class="space-y-4 hidden">
             <div class="flex items-center justify-between">
                 <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
   <i class="fi fi-rr-bullseye-arrow" style="font-size:24px;"></i>
@@ -129,7 +129,7 @@
         </section>
 
         <!-- My Challenges Section -->
-<section id="myChallenges" class="space-y-4 hidden">
+<section id="myChallenges" class="space-y-4">
   <div class="flex border-b mb-4">
     <button id="tabOngoing" onclick="showProgressTab('ongoing')" 
             class="flex-1 py-2 text-center font-medium border-b-2 border-red-500 text-red-600">
@@ -223,7 +223,7 @@
                 <i class="fi fi-rr-bullseye-arrow" style="font-size:24px;"></i>  
                 <span class="text-xs mt-1">Challenges</span>
             </button>
-            <button class="nav-item flex flex-col items-center p-2" onclick="showSection('myChallenges')">
+            <button class="nav-item flex flex-col items-center p-2 active" onclick="showSection('myChallenges')">
                 <i class="fi fi-rr-chart-line-up" style="font-size:24px;"></i>
                 <span class="text-xs mt-1">My Progress</span>
             </button>
@@ -454,7 +454,7 @@
         // Global variables
         let supabase = null;
         let currentUser = null;
-        let currentSection = 'challengeBoard';
+        let currentSection = 'myChallenges';
         let currentChallengeId = null;
         let currentEventId = null;
         let debugMessages = [];
