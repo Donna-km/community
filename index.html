@@ -2013,15 +2013,23 @@ async function redirectToPaymentGateway(eventId, price, image_url) {
                     const userPicture = photo.users?.user_picture;
                     
                     div.innerHTML = `
-                        <img src="${photo.image_url || photo.photo_url}" alt="Gallery photo" class="w-full object-cover" style="height: ${Math.random() * 100 + 200}px" onerror="this.parentElement.innerHTML='<div class=\\'p-4 text-center text-gray-500\\'>📷<br>Image failed to load</div>';">
-                        <div class="p-3">
-                            <div class="flex items-center space-x-2 mb-2">
-                                <div class="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold overflow-hidden">
-                                    ${userPicture ? 
-                                        `<img src="${userPicture}" alt="Profile" class="w-full h-full object-cover">` : 
-                                        userName.charAt(0).toUpperCase()
-                                    }
-                                </div>
+  <img 
+       src="${photo.image_url || photo.photo_url}" 
+       alt="Gallery photo" 
+       class="w-full object-cover cursor-pointer" 
+       style="height: ${Math.random() * 100 + 200}px" 
+       onclick="openPhotoModal('${photo.image_url || photo.photo_url}', '${photo.challenge_name || 'Gallery Photo'}')" 
+       onerror="this.parentElement.innerHTML='<div class=\\'p-4 text-center text-gray-500\\'>📷<br>Image failed to load</div>';">
+
+  <div class="p-3">
+    <div class="flex items-center space-x-2 mb-2">
+      <div class="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold overflow-hidden">
+        ${userPicture ? 
+          `<img src="${userPicture}" alt="Profile" class="w-full h-full object-cover">` : 
+          userName.charAt(0).toUpperCase()
+        }
+      </div>
+
                                 <div class="font-medium text-gray-800 text-sm">${userName}</div>
                             </div>
                             <div class="text-xs text-gray-500">${photo.challenge_name || 'Gallery Upload'}</div>
@@ -2961,6 +2969,16 @@ async function toggleStar(photoId) {
 
     document.getElementById(`starCount_${photoId}`).innerText = count || 0;
 }
+    function openPhotoModal(imageUrl, title) {
+  document.getElementById("photoModalImg").src = imageUrl;
+  document.getElementById("photoModalTitle").textContent = title;
+  document.getElementById("photoModal").classList.remove("hidden");
+}
+
+function closePhotoModal() {
+  document.getElementById("photoModal").classList.add("hidden");
+}
+
 function showProgressTab(tab) {
   const ongoing = document.getElementById('progressOngoing');
   const completed = document.getElementById('progressCompleted');
@@ -2993,6 +3011,16 @@ function updateMedalCounter() {
 }
 
 </script>
+    <!-- ✅ Photo Detail Modal -->
+<div id="photoModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden z-50">
+  <div class="bg-white rounded-xl shadow-xl w-11/12 max-w-lg p-4 relative">
+    <button onclick="closePhotoModal()" 
+            class="absolute top-2 right-2 text-gray-500 hover:text-gray-800">✖</button>
+    <img id="photoModalImg" src="" alt="photo" class="rounded-lg w-full object-cover mb-3">
+    <div id="photoModalTitle" class="text-center text-sm text-gray-600"></div>
+  </div>
+</div>
+
 
 </body>
 </html>
